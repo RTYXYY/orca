@@ -140,7 +140,9 @@ export async function isProviderAuthenticated(
       ? isBitbucketServerReviewCreationAuthenticated()
       : isBitbucketReviewCreationAuthenticated()
   }
-  // Only CLI-backed providers need host-routed Git reads; their CLIs run here. Token-backed providers do not touch the repo.
+  // Only the CLI-backed probes read a host: `gh` and `glab` run here, and the SSH target only
+  // routes the git reads under them. Of the token-backed forges only Bitbucket reads the remote,
+  // to tell a Server repo from a Cloud one.
   const connectionId = hostedReviewSshConnectionId(executionHostId)
   if (provider === 'gitlab') {
     return isGitLabAuthenticated(repoPath, connectionId, options)
