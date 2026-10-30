@@ -96,37 +96,33 @@ export function useBitbucketPRDiffComments(worktreeId: string): {
   const replyToCommentRef = useRef(replyToComment)
   replyToCommentRef.current = replyToComment
 
-  const inlineComments = useMemo(
-    () => {
-      if (!repoId || linkedPRNumber == null) {
-        return []
-      }
-      // Why: attach the reply callback per thread root; replies append to the thread and re-render zones.
-      const rootById = new Map<number, PRComment>()
-      for (const comment of comments) {
-        const rootId = Number(comment.threadId)
-        if (Number.isFinite(rootId) && rootId > 0 && !rootById.has(rootId)) {
-          const root = comments.find((c) => c.id === rootId)
-          if (root) {
-            rootById.set(rootId, root)
-          }
+  const inlineComments = useMemo(() => {
+    if (!repoId || linkedPRNumber == null) {
+      return []
+    }
+    // Why: attach the reply callback per thread root; replies append to the thread and re-render zones.
+    const rootById = new Map<number, PRComment>()
+    for (const comment of comments) {
+      const rootId = Number(comment.threadId)
+      if (Number.isFinite(rootId) && rootId > 0 && !rootById.has(rootId)) {
+        const root = comments.find((c) => c.id === rootId)
+        if (root) {
+          rootById.set(rootId, root)
         }
       }
-      return buildBitbucketInlineReviewComments(comments, repoId, linkedPRNumber).map((c, i) => {
-        const source = comments[i]
-        const parentId = source ? Number(source.threadId) : Number.NaN
-        return {
-          ...c,
-          onReply:
-            Number.isFinite(parentId) && parentId > 0
-              ? (body: string) => replyToCommentRef.current(parentId, body)
-              : undefined
-        }
-      })
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- replyToCommentRef is a stable ref holder.
-    [comments, linkedPRNumber, repoId]
-  )
+    }
+    return buildBitbucketInlineReviewComments(comments, repoId, linkedPRNumber).map((c, i) => {
+      const source = comments[i]
+      const parentId = source ? Number(source.threadId) : Number.NaN
+      return {
+        ...c,
+        onReply:
+          Number.isFinite(parentId) && parentId > 0
+            ? (body: string) => replyToCommentRef.current(parentId, body)
+            : undefined
+      }
+    })
+  }, [comments, linkedPRNumber, repoId])
 
   return { inlineComments, comments, replyToComment }
 }

@@ -151,13 +151,13 @@ export async function listBitbucketServerPullRequests(
   }
   try {
     // SAFETY: DC returns a paged JSON object; each item is validated in mapSummary.
-    const body = (await requestHostedReviewJson(
+    const body = await requestHostedReviewJson<RawListResponse>(
       url,
       {
         headers: { Accept: 'application/json', ...serverAuthHeaders(config) }
       },
       LIST_TIMEOUT_MS
-    )) as RawListResponse
+    )
     const prs = (body.values ?? [])
       .map(mapSummary)
       .filter((pr): pr is BitbucketServerPRSummary => pr !== null)

@@ -151,13 +151,13 @@ async function fetchAllCommentPages(
     url.searchParams.set('start', String(start))
     url.searchParams.set('limit', String(COMMENTS_PAGE_LIMIT))
     // SAFETY: DC returns a JSON object matching RawBitbucketServerCommentPage; fields are validated in the mappers.
-    const body = (await requestHostedReviewJson(
+    const body = await requestHostedReviewJson<RawBitbucketServerCommentPage>(
       url,
       {
         headers: { Accept: 'application/json', ...serverAuthHeaders(config) }
       },
       COMMENTS_TIMEOUT_MS
-    )) as RawBitbucketServerCommentPage
+    )
     values.push(...(body.values ?? []))
     if (body.isLastPage !== false || body.nextPageStart == null) {
       break

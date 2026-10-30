@@ -64,6 +64,22 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
+type CommentPostBody = { text?: string; anchor?: unknown }
+
+function asCommentPostBody(body: unknown): CommentPostBody {
+  if (typeof body !== 'object' || body === null) {
+    return {}
+  }
+  if (!('text' in body) && !('anchor' in body)) {
+    return {}
+  }
+  const record = body
+  return {
+    text: 'text' in record && typeof record.text === 'string' ? record.text : undefined,
+    anchor: 'anchor' in record ? record.anchor : undefined
+  }
+}
+
 describe('getBitbucketServerPRComments', () => {
   beforeEach(() => {
     process.env = { ...OLD_ENV, ORCA_BITBUCKET_SERVER_TOKEN: 'server-token' }
@@ -184,7 +200,7 @@ describe('replyToBitbucketServerPRComment', () => {
         ) {
           sendJson(res, 201, {
             id: 200,
-            text: (body as { text?: string }).text,
+            text: asCommentPostBody(body).text,
             createdDate: 1_700_000_010_000,
             author: { name: 'rty' },
             parent: { id: 101 }
@@ -235,10 +251,10 @@ describe('addBitbucketServerPRLineComment', () => {
         ) {
           sendJson(res, 201, {
             id: 300,
-            text: (body as { text?: string }).text,
+            text: asCommentPostBody(body).text,
             createdDate: 1_700_000_020_000,
             author: { name: 'rty' },
-            anchor: (body as { anchor?: unknown }).anchor
+            anchor: asCommentPostBody(body).anchor
           })
           return
         }

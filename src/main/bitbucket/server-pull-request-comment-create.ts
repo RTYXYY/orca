@@ -1,6 +1,9 @@
 import type { ExecutionHostId } from '../../shared/execution-host'
 import type { PRComment } from '../../shared/github/comment-types'
-import { requestHostedReviewJson } from '../source-control/hosted-review-api-request'
+import {
+  HostedReviewApiRequestError,
+  requestHostedReviewJson
+} from '../source-control/hosted-review-api-request'
 import { hostedReviewSshConnectionId } from '../source-control/hosted-review-execution-host'
 import {
   getHostedReviewLocalGitOptions,
@@ -13,7 +16,6 @@ import {
   type RawBitbucketServerComment
 } from './server-pull-request-comments'
 import { serverErrorMessage } from './server-request-errors'
-import { HostedReviewApiRequestError } from '../source-control/hosted-review-api-request'
 import { getBitbucketServerRepoRef } from './server-repository-ref'
 
 const COMMENT_POST_TIMEOUT_MS = 30_000
@@ -67,7 +69,7 @@ async function postComment(
   try {
     const config = resolveBitbucketServerAuthConfig()
     // SAFETY: DC returns the created comment as JSON; mapBitbucketServerComment validates fields.
-    const raw = (await requestHostedReviewJson(
+    const raw = await requestHostedReviewJson<RawBitbucketServerComment>(
       url,
       {
         method: 'POST',
@@ -79,7 +81,7 @@ async function postComment(
         body: JSON.stringify(payload)
       },
       COMMENT_POST_TIMEOUT_MS
-    )) as RawBitbucketServerComment
+    )
     const mapped = mapBitbucketServerComment(raw, numberOrUndefined(raw.id) ?? 0)
     if (!mapped) {
       return { ok: false, error: 'Bitbucket Data Center returned an unreadable comment.' }
