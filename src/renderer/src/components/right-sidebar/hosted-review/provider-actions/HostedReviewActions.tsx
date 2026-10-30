@@ -24,6 +24,7 @@ import {
 import { runWorktreeDelete } from '../../../sidebar/workspace-actions/deletion/delete-worktree-flow'
 import { getDeleteStateForWorktreeHost } from '../../../sidebar/workspace-actions/deletion/worktree-delete-state-host-match'
 import { presentGitLabMRMergeState } from './gitlab-mr-merge-state'
+import { presentBitbucketPRMergeState } from './bitbucket-pr-merge-state'
 import {
   ClosedReviewActions,
   DraftReviewActions,
@@ -59,7 +60,10 @@ export default function HostedReviewActions({
     (s) => getDeleteStateForWorktreeHost(worktree, s.deleteStateByWorktreeId)?.isDeleting ?? false
   )
   const isGitLab = review.provider === 'gitlab'
-  const { shortLabel, reviewLabel } = localizedHostedReviewCopy(isGitLab ? 'gitlab' : 'github')
+  const isBitbucket = review.provider === 'bitbucket'
+  const { shortLabel, reviewLabel } = localizedHostedReviewCopy(
+    isGitLab ? 'gitlab' : isBitbucket ? 'bitbucket' : 'github'
+  )
   const stackMergeScope = useMemo(
     () => (githubPR?.stack ? getGitHubPRStackMergeScope(githubPR.stack, review.number) : null),
     [githubPR?.stack, review.number]
@@ -85,6 +89,9 @@ export default function HostedReviewActions({
   const mergePresentation = useMemo(() => {
     if (isGitLab) {
       return { ...presentGitLabMRMergeState(review), autoMergeAction: null }
+    }
+    if (isBitbucket) {
+      return { ...presentBitbucketPRMergeState(review), autoMergeAction: null }
     }
     const presentation = presentGitHubPRMergeState({
       ...githubPR,
@@ -128,6 +135,7 @@ export default function HostedReviewActions({
   }, [
     githubPR,
     isGitLab,
+    isBitbucket,
     review,
     stackMergeLabel,
     stackMergeScope,
@@ -135,8 +143,11 @@ export default function HostedReviewActions({
     languageRevision
   ])
   const mergeMethods = useMemo(
-    () => resolveGitHubPRMergeMethods(isGitLab ? null : (githubPR?.mergeMethodSettings ?? null)),
-    [githubPR?.mergeMethodSettings, isGitLab]
+    () =>
+      resolveGitHubPRMergeMethods(
+        isGitLab || isBitbucket ? null : (githubPR?.mergeMethodSettings ?? null)
+      ),
+    [githubPR?.mergeMethodSettings, isGitLab, isBitbucket]
   )
   const {
     merging,
@@ -153,6 +164,7 @@ export default function HostedReviewActions({
     githubPR,
     repo,
     isGitLab,
+    isBitbucket,
     shortLabel,
     reviewLabel,
     defaultMergeMethod: mergeMethods.defaultMethod,
@@ -241,7 +253,12 @@ export default function HostedReviewActions({
                             )
                         : mergePresentation.directMergeAvailable
                           ? (stackMergeLabel ??
-                            getPullRequestMergeMethodLabel(mergeMethods.defaultMethod))
+                            (isBitbucket
+                              ? translate(
+                                  'auto.components.right.sidebar.HostedReviewActions.bitbucketMerge',
+                                  'Merge'
+                                )
+                              : getPullRequestMergeMethodLabel(mergeMethods.defaultMethod)))
                           : (mergePresentation.autoMergeAction?.label ?? mergePresentation.label)}
                     </span>
                   </Button>
@@ -295,6 +312,7 @@ export default function HostedReviewActions({
                   </>
                 )}
                 {(!stackMergeScope || !stackUsesMergeQueue) &&
+                  !isBitbucket &&
                   mergeMethods.methods.map((method) => (
                     <DropdownMenuItem
                       key={method}

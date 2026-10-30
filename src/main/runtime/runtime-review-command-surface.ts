@@ -4,9 +4,11 @@ import type { RuntimeGitHubReviewMutationCommands } from './integrations/github/
 import type { RuntimeGitHubReviewQueryCommands } from './integrations/github/runtime-github-review-query-commands'
 import type { RuntimeGitLabMutationCommands } from './integrations/gitlab/runtime-gitlab-mutation-commands'
 import type { RuntimeGitLabQueryCommands } from './integrations/gitlab/runtime-gitlab-query-commands'
+import type { RuntimeBitbucketMutationCommands } from './runtime-bitbucket-mutation-commands'
 
 type GitLabQueryName = Exclude<keyof RuntimeGitLabQueryCommands, 'constructor'>
 type GitLabMutationName = Exclude<keyof RuntimeGitLabMutationCommands, 'constructor'>
+type BitbucketMutationName = Exclude<keyof RuntimeBitbucketMutationCommands, 'constructor'>
 type GitHubProjectName = Exclude<keyof RuntimeGitHubProjectCommands, 'constructor'>
 type GitHubReviewQueryName =
   | 'getRepoIssue'
@@ -37,6 +39,7 @@ type GitHubIssueCommentName =
 
 export type RuntimeReviewCommandSurface = {} & Pick<RuntimeGitLabQueryCommands, GitLabQueryName> &
   Pick<RuntimeGitLabMutationCommands, GitLabMutationName> &
+  Pick<RuntimeBitbucketMutationCommands, BitbucketMutationName> &
   Pick<RuntimeGitHubReviewQueryCommands, GitHubReviewQueryName> &
   Pick<RuntimeGitHubReviewMutationCommands, GitHubReviewMutationName> &
   Pick<RuntimeGitHubIssueCommentCommands, GitHubIssueCommentName> &
@@ -45,6 +48,7 @@ export type RuntimeReviewCommandSurface = {} & Pick<RuntimeGitLabQueryCommands, 
 type RuntimeReviewCommandOwners = {
   gitLabQueries: RuntimeGitLabQueryCommands
   gitLabMutations: RuntimeGitLabMutationCommands
+  bitbucketMutations: RuntimeBitbucketMutationCommands
   gitHubReviewQueries: RuntimeGitHubReviewQueryCommands
   gitHubReviewMutations: RuntimeGitHubReviewMutationCommands
   gitHubIssueComments: RuntimeGitHubIssueCommentCommands
@@ -57,6 +61,7 @@ export function installRuntimeReviewCommandSurface(
 ): void {
   const glq = owners.gitLabQueries
   const glm = owners.gitLabMutations
+  const bbm = owners.bitbucketMutations
   const ghq = owners.gitHubReviewQueries
   const ghm = owners.gitHubReviewMutations
   const comments = owners.gitHubIssueComments
@@ -81,6 +86,7 @@ export function installRuntimeReviewCommandSurface(
     getGitLabRepoJobTrace: glm.getGitLabRepoJobTrace.bind(glm),
     retryGitLabRepoJob: glm.retryGitLabRepoJob.bind(glm),
     mergeGitLabRepoMR: glm.mergeGitLabRepoMR.bind(glm),
+    mergeBitbucketRepoPR: bbm.mergeBitbucketRepoPR.bind(bbm),
     updateGitLabRepoMRState: glm.updateGitLabRepoMRState.bind(glm),
     updateGitLabRepoMR: glm.updateGitLabRepoMR.bind(glm),
     updateGitLabRepoMRReviewers: glm.updateGitLabRepoMRReviewers.bind(glm),

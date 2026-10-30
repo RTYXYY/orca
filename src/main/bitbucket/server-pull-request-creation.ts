@@ -21,6 +21,7 @@ import {
   type BitbucketServerAuthConfig
 } from './server-auth-config'
 import { bitbucketServerRepoApiPath, getBitbucketServerPullRequestForBranch } from './server-client'
+import { serverErrorMessage } from './server-request-errors'
 import {
   mapBitbucketServerPullRequest,
   type RawBitbucketServerPullRequest
@@ -117,31 +118,6 @@ async function getDefaultReviewers(
   } catch {
     return []
   }
-}
-
-function serverErrorMessage(error: HostedReviewApiRequestError): string | null {
-  try {
-    const parsed: unknown = JSON.parse(error.message)
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      'errors' in parsed &&
-      Array.isArray(parsed.errors)
-    ) {
-      const first: unknown = parsed.errors[0]
-      if (
-        typeof first === 'object' &&
-        first !== null &&
-        'message' in first &&
-        typeof first.message === 'string'
-      ) {
-        return first.message
-      }
-    }
-  } catch {
-    // Non-JSON body: no server reason to show.
-  }
-  return null
 }
 
 function classifyCreateError(error: unknown): CreateHostedReviewResult {

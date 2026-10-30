@@ -104,6 +104,7 @@ export function renderDiffCommentZoneCard(
               }
             : undefined
         }
+        onReply={comment.onReply}
         onContentResize={() => resizeZone(comment.id)}
         observeRenderedSize
         headerActions={

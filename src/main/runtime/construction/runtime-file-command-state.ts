@@ -15,6 +15,7 @@ import { RuntimeGitHubReviewQueryCommands } from '../integrations/github/runtime
 import { RuntimeGitHubReviewMutationCommands } from '../integrations/github/runtime-github-review-mutation-commands'
 import { RuntimeGitHubIssueCommentCommands } from '../integrations/github/runtime-github-issue-comment-commands'
 import { RuntimeGitHubProjectCommands } from '../integrations/github/runtime-github-project-commands'
+import { RuntimeBitbucketMutationCommands } from '../runtime-bitbucket-mutation-commands'
 import { RuntimeRepositoryHooksCommands } from '../runtime-repository-hooks-commands'
 import { RuntimeRepositoryIssueCommand } from '../runtime-repository-issue-command'
 import { ClientHostedBrowserRowPublisher } from '../client-hosted-browser-row-publication'
@@ -260,6 +261,11 @@ export abstract class OrcaRuntimeWithFileCommands extends OrcaRuntimeWithPreserv
   })
 
   protected readonly gitLabMutationCommands = new RuntimeGitLabMutationCommands({
+    resolveRepo: (selector) => this.resolveRepoSelector(selector),
+    getLocalGitArgs: (repo) => this.getLocalGitExecutionOptionArgs(repo)
+  })
+
+  protected readonly bitbucketMutationCommands = new RuntimeBitbucketMutationCommands({
     resolveRepo: (selector) => this.resolveRepoSelector(selector),
     getLocalGitArgs: (repo) => this.getLocalGitExecutionOptionArgs(repo)
   })

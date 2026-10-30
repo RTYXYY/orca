@@ -59,6 +59,10 @@ export type ForgeReviewByNumberInput = ForgeProviderRepositoryContext & {
   number: number
 }
 
+export type ForgeMergeReviewResult =
+  | { ok: true }
+  | { ok: false; error: string; code?: 'auth_required' | 'conflict' | 'not_found' }
+
 export type ForgeProvider = {
   id: ForgeProviderId
   supportsReviewCreation: boolean
@@ -71,6 +75,12 @@ export type ForgeProvider = {
     executionHostId: ExecutionHostId,
     options?: HostedReviewExecutionOptions
   ): Promise<CreateHostedReviewResult>
+  mergeReview?(
+    repoPath: string,
+    number: number,
+    executionHostId: ExecutionHostId,
+    options?: HostedReviewExecutionOptions
+  ): Promise<ForgeMergeReviewResult>
 }
 
 const gitLabForgeProvider = {

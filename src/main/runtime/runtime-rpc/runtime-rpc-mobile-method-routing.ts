@@ -134,6 +134,12 @@ export const EXECUTION_HOST_METHODS = [
   'gitlab.updateIssue',
   'gitlab.updateMR',
   'gitlab.updateMRState',
+  // Repo-scoped Bitbucket operations run where the desktop runs them: on the repo's host, with its credential.
+  'bitbucket.mergePR',
+  'bitbucket.listPRs',
+  'bitbucket.prComments',
+  'bitbucket.addPRCommentReply',
+  'bitbucket.addPRLineComment',
   // Mobile Smart picker: resolve a pasted GitLab URL to an exact issue/MR (MR listing reuses gitlab.listWorkItems).
   'gitlab.workItemByPath',
   'gitlab.workItemDetails',

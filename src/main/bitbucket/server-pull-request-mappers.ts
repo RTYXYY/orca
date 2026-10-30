@@ -21,6 +21,8 @@ export type RawBitbucketServerPullRequest = {
   title?: string
   state?: string | null
   updatedDate?: number
+  /** Required by the merge endpoint as an optimistic concurrency token. */
+  version?: number
   fromRef?: RawBitbucketServerRef
   toRef?: RawBitbucketServerRef
   reviewers?: readonly RawBitbucketServerReviewer[]

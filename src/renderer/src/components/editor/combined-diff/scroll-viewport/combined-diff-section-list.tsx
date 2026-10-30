@@ -6,6 +6,7 @@ import { joinPath } from '@/lib/path'
 import type { OpenFile } from '@/store/slices/editor'
 import type { DiffComment } from '../../../../../../shared/diff-comment-types'
 import type { DiffCommentOwner } from '@/store/diff-comment-owner'
+import type { DecoratedDiffComment } from '@/components/diff-comments/decorated-diff-comment'
 import { DiffSectionItem } from '../../diff/sections/DiffSectionItem'
 import type { DiffSectionItemProps } from '../../diff/sections/diff-section-item-props'
 import { DiffNotesSendMenu } from '../../diff/review/DiffNotesSendMenu'
@@ -16,6 +17,7 @@ import { translate } from '@/i18n/i18n'
 
 export function CombinedDiffSectionList({
   activeGroupId,
+  bitbucketInlineComments,
   canOpenWorkspaceFileBrowserForPath,
   commentOwner,
   diffCommentsForWorktree,
@@ -45,6 +47,7 @@ export function CombinedDiffSectionList({
   virtualizer
 }: {
   activeGroupId: string | undefined
+  bitbucketInlineComments?: readonly DecoratedDiffComment[]
   canOpenWorkspaceFileBrowserForPath: (path: string) => boolean
   commentOwner: DiffCommentOwner | null
   diffCommentsForWorktree: DiffComment[]
@@ -118,6 +121,9 @@ export function CombinedDiffSectionList({
                   sectionHeight={sectionHeights[virtualItem.index]}
                   worktreeId={file.worktreeId}
                   noteSource={file}
+                  inlineComments={bitbucketInlineComments?.filter(
+                    (comment) => comment.filePath === section.path
+                  )}
                   loadSection={loadSection}
                   loadDeferredSection={loadDeferredSection}
                   retrySection={retrySection}

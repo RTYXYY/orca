@@ -15,6 +15,7 @@ import {
   setGitHubHostedReviewAutoMerge,
   updateGitHubHostedReviewState
 } from './hosted-review-github-actions'
+import { mergeBitbucketHostedReview } from './hosted-review-bitbucket-actions'
 import { translate } from '@/i18n/i18n'
 import { getHostedReviewStateChangeCopy } from './hosted-review-state-change-copy'
 import { buildGitHubPRStackMergeConfirmation } from './github-pr-stack-confirmation'
@@ -42,6 +43,7 @@ export function useHostedReviewActions({
   githubPR,
   repo,
   isGitLab,
+  isBitbucket,
   shortLabel,
   reviewLabel,
   defaultMergeMethod,
@@ -52,6 +54,7 @@ export function useHostedReviewActions({
   githubPR?: PRInfo | null
   repo: Repo
   isGitLab: boolean
+  isBitbucket: boolean
   shortLabel: string
   reviewLabel: string
   defaultMergeMethod: GitHubPRMergeMethod
@@ -85,7 +88,7 @@ export function useHostedReviewActions({
 
   const handleMerge = useCallback(
     async (method: GitHubPRMergeMethod = defaultMergeMethod) => {
-      if (!isGitLab && githubPR?.stack) {
+      if (!isGitLab && !isBitbucket && githubPR?.stack) {
         const usesMergeQueue =
           review.mergeQueueRequired === true || githubPR.mergeQueueRequired === true
         const confirmed = await confirm(
@@ -113,12 +116,17 @@ export function useHostedReviewActions({
               iid: review.number,
               method
             })
-          : await mergeGitHubHostedReview({
-              repo,
-              prNumber: review.number,
-              method,
-              prRepo: githubPR?.prRepo ?? null
-            })
+          : isBitbucket
+            ? await mergeBitbucketHostedReview({
+                repo,
+                prNumber: review.number
+              })
+            : await mergeGitHubHostedReview({
+                repo,
+                prNumber: review.number,
+                method,
+                prRepo: githubPR?.prRepo ?? null
+              })
         if (!result.ok) {
           setActionError(codeHostErrorText(result))
         }
@@ -135,6 +143,7 @@ export function useHostedReviewActions({
       githubPR?.mergeQueueRequired,
       githubPR?.stack,
       isGitLab,
+      isBitbucket,
       defaultMergeMethod,
       onRefreshReview,
       repo,

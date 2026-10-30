@@ -1,8 +1,9 @@
 import { ImeTextarea } from '@/lib/ime-text-field'
-import { CornerDownLeft, Pencil, Trash } from 'lucide-react'
+import { CornerDownLeft, Pencil, Reply, Trash } from 'lucide-react'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { getDiffCommentLineMetaLabel } from './diff-comment-line-meta-label'
+import { DiffCommentReplyComposer } from './DiffCommentReplyComposer'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import { useUiLanguageRevision } from '@/i18n/use-ui-language-revision'
@@ -26,6 +27,8 @@ type Props = {
   observeRenderedSize?: boolean
   onSubmitEdit?: (body: string) => Promise<boolean>
   headerActions?: ReactNode
+  /** Remote thread reply (e.g. Bitbucket DC PR comment); opens an inline composer. */
+  onReply?: (body: string) => Promise<boolean>
 }
 
 function resizeDiffCommentTextarea(textarea: HTMLTextAreaElement): boolean {
@@ -49,13 +52,15 @@ export function DiffCommentCard({
   onContentResize,
   observeRenderedSize,
   onSubmitEdit,
-  headerActions
+  headerActions,
+  onReply
 }: Props): React.JSX.Element {
   // Zone cards live in separate React roots, so subscribe directly to language changes.
   useUiLanguageRevision()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(body)
   const [submitting, setSubmitting] = useState(false)
+  const [replying, setReplying] = useState(false)
   const mountedRef = useMountedRef()
   const cardRef = useRef<HTMLDivElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -169,6 +174,10 @@ export function DiffCommentCard({
     }
   }
 
+  const handleStartReply = (): void => {
+    setReplying(true)
+  }
+
   return (
     <div ref={cardRef} className="orca-diff-comment-card">
       <div className="orca-diff-comment-content-col">
@@ -206,6 +215,32 @@ export function DiffCommentCard({
                     }}
                   >
                     {translate('auto.components.diff.comments.DiffCommentCard.6978871a3d', 'Open')}
+                  </button>
+                  {(onSubmitEdit || onDelete) && (
+                    <span className="orca-diff-comment-pill-divider" />
+                  )}
+                </>
+              )}
+              {onReply && !editing && (
+                <>
+                  <button
+                    type="button"
+                    className="orca-diff-comment-pill-btn"
+                    title={translate(
+                      'auto.components.diff.comments.DiffCommentCard.replyToComment',
+                      'Reply'
+                    )}
+                    aria-label={translate(
+                      'auto.components.diff.comments.DiffCommentCard.replyToComment',
+                      'Reply'
+                    )}
+                    onClick={(ev) => {
+                      ev.preventDefault()
+                      ev.stopPropagation()
+                      handleStartReply()
+                    }}
+                  >
+                    <Reply className="size-3" />
                   </button>
                   {(onSubmitEdit || onDelete) && (
                     <span className="orca-diff-comment-pill-divider" />
@@ -323,6 +358,14 @@ export function DiffCommentCard({
         ) : (
           <div className="orca-diff-comment-body">{body}</div>
         )}
+
+        {/* Reply composer for remote threads (e.g. Bitbucket DC PR comments) */}
+        {replying && onReply ? (
+          <DiffCommentReplyComposer
+            onReply={onReply}
+            onContentResize={() => onContentResizeRef.current?.()}
+          />
+        ) : null}
       </div>
     </div>
   )

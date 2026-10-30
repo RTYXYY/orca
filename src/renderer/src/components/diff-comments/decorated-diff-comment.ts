@@ -7,4 +7,6 @@ export type DecoratedDiffComment = DiffComment & {
   url?: string
   canDelete?: boolean
   canEdit?: boolean
+  /** Remote thread reply support (e.g. Bitbucket DC PR comments); absent on local notes. */
+  onReply?: (body: string) => Promise<boolean>
 }

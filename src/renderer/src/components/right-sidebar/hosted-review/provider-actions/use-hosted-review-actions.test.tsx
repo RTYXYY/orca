@@ -58,12 +58,14 @@ function HookProbe(props: {
   onRefreshReview: () => Promise<void>
   pullRequest?: PRInfo
   isGitLab?: boolean
+  isBitbucket?: boolean
 }): null {
   latest = useHostedReviewActions({
     review,
     githubPR: props.pullRequest ?? githubPR,
     repo: props.repo,
     isGitLab: props.isGitLab ?? false,
+    isBitbucket: props.isBitbucket ?? false,
     shortLabel: 'PR',
     reviewLabel: 'pull request',
     defaultMergeMethod: 'squash',

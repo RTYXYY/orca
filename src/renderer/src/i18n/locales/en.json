@@ -13932,7 +13932,8 @@
             "reopenConfirm": "Reopen",
             "closeReviewFailed": "Failed to close {{review}}",
             "reopenReviewFailed": "Failed to reopen {{review}}",
-            "markReadyFailed": "Failed to mark {{review}} ready for review"
+            "markReadyFailed": "Failed to mark {{review}} ready for review",
+            "bitbucketMerge": "Merge"
           },
           "PortsPanel": {
             "3ea4a02a8f": "Cancel",
@@ -15317,6 +15318,35 @@
             "createInProgress": "Create PR in progress...",
             "workspaceHostUnresolved": "The workspace host is unresolved. Refresh the workspace and retry.",
             "branchDiscoveryFailed": "Branch discovery failed."
+          },
+          "bitbucket": {
+            "pr": {
+              "merge": {
+                "state": {
+                  "merged": "Merged",
+                  "mergedTooltip": "This pull request is already merged",
+                  "closed": "Closed",
+                  "closedTooltip": "This pull request is declined",
+                  "draft": "Draft",
+                  "draftTooltip": "This pull request is still a draft",
+                  "conflicts": "Conflicts",
+                  "conflictsTooltip": "Bitbucket reports merge conflicts",
+                  "changesRequested": "Changes requested",
+                  "changesRequestedTooltip": "A reviewer requested changes on this pull request",
+                  "approvalRequired": "Approval required",
+                  "approvalRequiredTooltip": "Bitbucket requires approval before this pull request can merge",
+                  "checksFailed": "Checks failed",
+                  "checksFailedTooltip": "Bitbucket has not reported a mergeable status and checks failed",
+                  "mergeableChecksFailedTooltip": "Bitbucket says this PR can merge, but some checks failed",
+                  "checking": "Checking",
+                  "checkingTooltip": "Bitbucket is still computing this pull request status",
+                  "checksPending": "Checks pending",
+                  "checksPendingTooltip": "Bitbucket says this PR can merge, but checks are still running",
+                  "ableToMerge": "Able to merge",
+                  "ableToMergeTooltip": "Bitbucket says this pull request can merge"
+                }
+              }
+            }
           }
         }
       },
@@ -17295,7 +17325,10 @@
             "cad3384faa": "Edit note",
             "508ee678a5": "Open in browser",
             "noteAuthorFallback": "Note",
-            "sentMeta": "sent"
+            "sentMeta": "sent",
+            "replyToComment": "Reply",
+            "replySubmit": "Reply",
+            "replySubmitting": "Replying…"
           },
           "DiffCommentPopover": {
             "2b3ce6d394": "Cancel",

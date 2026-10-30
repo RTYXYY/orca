@@ -9,6 +9,7 @@ import {
   getBitbucketServerPullRequestForBranchOrThrow
 } from '../bitbucket/server-client'
 import { createBitbucketServerPullRequest } from '../bitbucket/server-pull-request-creation'
+import { mergeBitbucketServerPullRequest } from '../bitbucket/server-pull-request-merge'
 import { getBitbucketServerRepoRef } from '../bitbucket/server-repository-ref'
 import type { ForgeProvider, ForgeProviderRepositoryContext } from './forge-provider'
 import { forgeConnectionId, hostedReviewExecutionArgs } from './forge-provider-execution'
@@ -70,5 +71,15 @@ export const bitbucketForgeProvider = {
       ? createBitbucketServerPullRequest
       : createBitbucketPullRequest
     return create(...args)
+  },
+  async mergeReview(repoPath, number, executionHostId, options) {
+    // Why: Server-only; Bitbucket Cloud has no usable merge credential path here yet.
+    if (!(await bitbucketServerRepoRef({ repoPath, executionHostId, ...options }))) {
+      return {
+        ok: false,
+        error: 'Merging pull requests is not supported for this Bitbucket repository.'
+      }
+    }
+    return mergeBitbucketServerPullRequest(repoPath, number, executionHostId, undefined, options)
   }
 } satisfies ForgeProvider

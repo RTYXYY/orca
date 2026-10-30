@@ -40,6 +40,7 @@ import { useCombinedDiffNotesActions } from './review-controls/use-combined-diff
 import { useCombinedDiffSectionActions } from './review-controls/use-combined-diff-section-actions'
 import { useCombinedDiffViewPreferences } from './review-controls/use-combined-diff-view-preferences'
 import { useDocumentDarkTheme } from '@/hooks/use-document-dark-theme'
+import { useBitbucketPRDiffComments } from './use-bitbucket-pr-diff-comments'
 
 export default function CombinedDiffViewer({
   file,
@@ -70,6 +71,8 @@ export default function CombinedDiffViewer({
   const clearDiffComments = useAppStore((s) => s.clearDiffComments)
   // The notes of the copy this diff was read from (the file's server when it names one).
   const notesView = useVisibleWorktreeDiffComments(file.worktreeId, file)
+  // Why: Bitbucket DC PR comments render on the branch diff like GitHub's PR files tab.
+  const bitbucketPRComments = useBitbucketPRDiffComments(file.worktreeId)
   const activeGroupId = useAppStore((s) => s.activeGroupIdByWorktree[file.worktreeId])
   const canOpenWorkspaceFileBrowserForPath = useWorkspaceFileBrowserActionPredicate(file.worktreeId)
   const isDark = useDocumentDarkTheme()
@@ -377,6 +380,7 @@ export default function CombinedDiffViewer({
           />
           <CombinedDiffSectionList
             activeGroupId={activeGroupId}
+            bitbucketInlineComments={bitbucketPRComments.inlineComments}
             canOpenWorkspaceFileBrowserForPath={canOpenWorkspaceFileBrowserForPath}
             commentOwner={notesView.owner}
             diffCommentsForWorktree={notesView.comments}
