@@ -3368,7 +3368,12 @@
           "linearViewNotFound": "Saved Linear view was not found.",
           "linearViewRestoreFailed": "Failed to restore saved Linear view."
         },
-        "shownCount_one": "{{count}} shown"
+        "shownCount_one": "{{count}} shown",
+        "bitbucketSource": "Bitbucket",
+        "bitbucketPR": "PR",
+        "bitbucketDraft": "draft",
+        "openInBitbucket": "Open in Bitbucket",
+        "refreshBitbucketPRs": "Refresh Bitbucket pull requests"
       },
       "Terminal": {
         "73768427cf": "Close",
@@ -6485,6 +6490,7 @@
           "e7ad3c540d": "Open Jira tasks",
           "c39ab10000": "Open Linear tasks",
           "196c1b5362": "Open GitLab tasks",
+          "openBitbucketTasks": "Open Bitbucket tasks",
           "0ccba862b8": "Open GitHub tasks",
           "fee535205b": "Tasks",
           "d599269755": "Hide from sidebar",
@@ -9434,6 +9440,8 @@
           "addJira": "Add Jira access",
           "githubDescription": "Browse GitHub issues and start workspaces from them.",
           "gitlabDescription": "Browse GitLab issues and start workspaces from them.",
+          "bitbucketLabel": "Bitbucket",
+          "bitbucketDescription": "Browse Bitbucket Data Center pull requests and start workspaces from them.",
           "linearDescription": "Connect Linear, install the agent skill, and show it in Tasks.",
           "jiraDescription": "Connect Jira Cloud or self-hosted Jira and show it in Tasks.",
           "setupTitle": "Task management setup",
@@ -18772,7 +18780,9 @@
         "noGitLabMrsTitle": "No GitLab merge requests",
         "noGitLabMrsDescription": "No GitLab MRs match this filter.",
         "noGitLabWorkTitle": "No GitLab work",
-        "noGitLabWorkDescription": "No GitLab work matches this filter."
+        "noGitLabWorkDescription": "No GitLab work matches this filter.",
+        "noBitbucketPRsTitle": "No Bitbucket pull requests",
+        "noBitbucketPRsDescription": "No Bitbucket Data Center pull requests match this filter."
       },
       "taskSourceContextSummary": {
         "sourceUnavailable": "{{value0}} source unavailable: {{value1}}",

@@ -21,6 +21,7 @@ import {
   getJiraPresets,
   getGitLabIssueFilters,
   getGitLabMRFilters,
+  getBitbucketPRFilters,
   getLinearViewOptions,
   getLinearGroupOptions,
   getLinearOrderOptions,
@@ -133,6 +134,10 @@ export function useTaskPageRepoSelection(model: TaskPageStoreBindingsModel) {
         preferredVisibleTaskProviders,
         {
           gitlabInstalled: preflightStatusCurrent && preflightStatus?.glab?.installed === true,
+          bitbucketConnected:
+            preflightStatusCurrent &&
+            preflightStatus?.bitbucket?.configured === true &&
+            preflightStatus.bitbucket.authenticated === true,
           linearConnected: linearConnected === true
         },
         defaultTaskSource
@@ -141,6 +146,8 @@ export function useTaskPageRepoSelection(model: TaskPageStoreBindingsModel) {
       defaultTaskSource,
       linearConnected,
       preferredVisibleTaskProviders,
+      preflightStatus?.bitbucket?.configured,
+      preflightStatus?.bitbucket?.authenticated,
       preflightStatusCurrent,
       preflightStatus?.glab?.installed
     ]
@@ -151,6 +158,7 @@ export function useTaskPageRepoSelection(model: TaskPageStoreBindingsModel) {
   const jiraPresets = getJiraPresets()
   const gitLabIssueFilters = getGitLabIssueFilters()
   const gitLabMRFilters = getGitLabMRFilters()
+  const bitbucketPRFilters = getBitbucketPRFilters()
   const linearViewOptions = getLinearViewOptions()
   const linearGroupOptions = getLinearGroupOptions()
   const linearOrderOptions = getLinearOrderOptions()
@@ -186,6 +194,7 @@ export function useTaskPageRepoSelection(model: TaskPageStoreBindingsModel) {
   )
 
   // Seed preset/query synchronously to avoid a throwaway initial empty-query request.
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: mirrors the typed-model-extension pattern of the sibling task-page hooks.
   const nextModel = model as typeof model & {
     eligibleRepos: typeof eligibleRepos
     resolvedInitialSelection: typeof resolvedInitialSelection
@@ -212,6 +221,7 @@ export function useTaskPageRepoSelection(model: TaskPageStoreBindingsModel) {
     jiraPresets: typeof jiraPresets
     gitLabIssueFilters: typeof gitLabIssueFilters
     gitLabMRFilters: typeof gitLabMRFilters
+    bitbucketPRFilters: typeof bitbucketPRFilters
     linearViewOptions: typeof linearViewOptions
     linearGroupOptions: typeof linearGroupOptions
     linearOrderOptions: typeof linearOrderOptions
@@ -244,6 +254,7 @@ export function useTaskPageRepoSelection(model: TaskPageStoreBindingsModel) {
   nextModel.jiraPresets = jiraPresets
   nextModel.gitLabIssueFilters = gitLabIssueFilters
   nextModel.gitLabMRFilters = gitLabMRFilters
+  nextModel.bitbucketPRFilters = bitbucketPRFilters
   nextModel.linearViewOptions = linearViewOptions
   nextModel.linearGroupOptions = linearGroupOptions
   nextModel.linearOrderOptions = linearOrderOptions

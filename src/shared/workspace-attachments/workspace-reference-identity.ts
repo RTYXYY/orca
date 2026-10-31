@@ -184,6 +184,10 @@ function externalUrl(item: WorkspaceAttachment): string | undefined {
       return identity.webUrl
         ? `${identity.webUrl.replace(/\/+$/, '')}/-/${item.type === 'mr' ? 'merge_requests' : 'issues'}/${item.number}`
         : undefined
+    case 'bitbucket':
+      return identity.webUrl
+        ? `${identity.webUrl.replace(/\/+$/, '')}/pull-requests/${item.number}`
+        : undefined
     case 'jira':
       return identity.siteUrl && identifier
         ? `${identity.siteUrl.replace(/\/+$/, '')}/browse/${identifier}`

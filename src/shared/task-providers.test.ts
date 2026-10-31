@@ -22,7 +22,7 @@ describe('task providers', () => {
     expect(
       normalizeTaskProviderSettings({
         visibleTaskProviders: ['gitlab'],
-        defaultTaskSource: 'bitbucket'
+        defaultTaskSource: 'not-a-provider'
       })
     ).toEqual({
       defaultTaskSource: 'gitlab',
@@ -32,8 +32,9 @@ describe('task providers', () => {
 
   it('filters runtime-unavailable providers without changing preference normalization', () => {
     expect(
-      filterAvailableTaskProviders(['github', 'gitlab', 'linear'], {
+      filterAvailableTaskProviders(['github', 'gitlab', 'bitbucket', 'linear'], {
         gitlabInstalled: false,
+        bitbucketConnected: false,
         linearConnected: true
       })
     ).toEqual(['github', 'linear'])
@@ -45,6 +46,7 @@ describe('task providers', () => {
         ['linear'],
         {
           gitlabInstalled: false,
+          bitbucketConnected: false,
           linearConnected: true
         },
         'github'
@@ -58,6 +60,7 @@ describe('task providers', () => {
         ['linear'],
         {
           gitlabInstalled: false,
+          bitbucketConnected: false,
           linearConnected: true
         },
         'linear'
@@ -71,6 +74,7 @@ describe('task providers', () => {
         ['linear'],
         {
           gitlabInstalled: false,
+          bitbucketConnected: false,
           linearConnected: true
         },
         'gitlab'
@@ -84,9 +88,10 @@ describe('task providers', () => {
         ['gitlab'],
         {
           gitlabInstalled: false,
+          bitbucketConnected: false,
           linearConnected: true
         },
-        'bitbucket'
+        'not-a-provider'
       )
     ).toEqual(['github'])
   })
@@ -95,6 +100,7 @@ describe('task providers', () => {
     expect(
       filterAvailableTaskProviders(['gitlab', 'linear'], {
         gitlabInstalled: false,
+        bitbucketConnected: false,
         linearConnected: false
       })
     ).toEqual(['github'])

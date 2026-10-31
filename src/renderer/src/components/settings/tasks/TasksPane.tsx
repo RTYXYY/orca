@@ -10,6 +10,7 @@ import {
 } from '../../../../../shared/task-providers'
 import { JiraIcon } from '@/components/icons/JiraIcon'
 import { LinearIcon } from '@/components/icons/LinearIcon'
+import { BitbucketIcon } from '@/components/icons/BitbucketIcon'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store/index'
 import { SearchableSetting } from '../section-layout/SearchableSetting'
@@ -66,6 +67,18 @@ const PROVIDER_META: Record<
       )
     },
     Icon: ({ className }) => <Gitlab className={className} />
+  },
+  bitbucket: {
+    get label() {
+      return translate('auto.components.settings.TasksPane.bitbucketLabel', 'Bitbucket')
+    },
+    get description() {
+      return translate(
+        'auto.components.settings.TasksPane.bitbucketDescription',
+        'Browse Bitbucket Data Center pull requests and start workspaces from them.'
+      )
+    },
+    Icon: ({ className }) => <BitbucketIcon className={className} />
   },
   linear: {
     get label() {

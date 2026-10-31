@@ -14,6 +14,13 @@ export type GitLabTaskProviderIdentity = {
   webUrl?: string | null
 }
 
+export type BitbucketTaskProviderIdentity = {
+  provider: 'bitbucket'
+  projectKey?: string | null
+  repoSlug?: string | null
+  webUrl?: string | null
+}
+
 export type LinearTaskProviderIdentity = {
   provider: 'linear'
   workspaceId?: string | null
@@ -32,6 +39,7 @@ export type JiraTaskProviderIdentity = {
 export type TaskProviderIdentity =
   | GitHubTaskProviderIdentity
   | GitLabTaskProviderIdentity
+  | BitbucketTaskProviderIdentity
   | LinearTaskProviderIdentity
   | JiraTaskProviderIdentity
 
@@ -72,6 +80,13 @@ export function normalizeTaskProviderIdentity(
         teamId: normalizeNonEmptyString(raw.teamId),
         teamKey: normalizeNonEmptyString(raw.teamKey)
       }
+    case 'bitbucket':
+      return {
+        provider,
+        projectKey: normalizeNonEmptyString(raw.projectKey),
+        repoSlug: normalizeNonEmptyString(raw.repoSlug),
+        webUrl: normalizeNonEmptyString(raw.webUrl)
+      }
     case 'jira':
       return {
         provider,
@@ -110,6 +125,8 @@ export function isStoredTaskProviderIdentity(provider: TaskProvider, identity: u
       return ['workspaceId', 'workspaceName', 'teamId', 'teamKey'].every((key) =>
         isNullableOptionalString(raw[key])
       )
+    case 'bitbucket':
+      return ['projectKey', 'repoSlug', 'webUrl'].every((key) => isNullableOptionalString(raw[key]))
     case 'jira':
       return ['siteId', 'siteUrl', 'projectKey'].every((key) => isNullableOptionalString(raw[key]))
   }
@@ -118,6 +135,7 @@ export function isStoredTaskProviderIdentity(provider: TaskProvider, identity: u
 const TASK_PROVIDER_IDENTITY_FIELDS: Record<TaskProvider, readonly string[]> = {
   github: ['owner', 'repo', 'host'],
   gitlab: ['projectId', 'namespace', 'project', 'webUrl'],
+  bitbucket: ['projectKey', 'repoSlug', 'webUrl'],
   linear: ['workspaceId', 'workspaceName', 'teamId', 'teamKey'],
   jira: ['siteId', 'siteUrl', 'projectKey']
 }
@@ -155,6 +173,8 @@ export function taskProviderIdentityCachePart(
       return identity.projectId ?? [identity.namespace, identity.project].filter(Boolean).join('/')
     case 'linear':
       return [identity.workspaceId, identity.teamId ?? identity.teamKey].filter(Boolean).join('/')
+    case 'bitbucket':
+      return [identity.projectKey, identity.repoSlug].filter(Boolean).join('/')
     case 'jira':
       return [identity.siteId ?? identity.siteUrl, identity.projectKey].filter(Boolean).join('/')
   }

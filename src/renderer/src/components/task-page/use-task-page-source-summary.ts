@@ -32,7 +32,7 @@ export function useTaskPageSourceSummary(model: TaskPageSourceAvailabilityPrelud
     Partial<Record<TaskProvider, TaskSourceAvailabilityNotice>>
   >(() => {
     const availabilityForContexts = (
-      provider: Extract<TaskProvider, 'github' | 'gitlab'>,
+      provider: Extract<TaskProvider, 'github' | 'gitlab' | 'bitbucket'>,
       contexts: readonly TaskSourceContext[]
     ): TaskSourceHostAvailability[] => [
       ...contexts.flatMap((context) => {
@@ -79,6 +79,18 @@ export function useTaskPageSourceSummary(model: TaskPageSourceAvailabilityPrelud
             'gitlab',
             selectedRepos
               .map((repo) => getTaskPageRepoSourceContext(repo, 'gitlab'))
+              .filter((context): context is TaskSourceContext => context !== null)
+          )
+        }) ?? undefined,
+      bitbucket:
+        getTaskSourceAvailabilityNotice({
+          providerLabel: labelFor('bitbucket'),
+          sourceCount: selectedRepos.length,
+          hostLabelById,
+          hostAvailability: availabilityForContexts(
+            'bitbucket',
+            selectedRepos
+              .map((repo) => getTaskPageRepoSourceContext(repo, 'bitbucket'))
               .filter((context): context is TaskSourceContext => context !== null)
           )
         }) ?? undefined,

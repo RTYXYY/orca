@@ -2,6 +2,7 @@ import React from 'react'
 import { EyeOff, Github, Gitlab, List } from 'lucide-react'
 import { JiraIcon } from '@/components/icons/JiraIcon'
 import { LinearIcon } from '@/components/icons/LinearIcon'
+import { BitbucketIcon } from '@/components/icons/BitbucketIcon'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -87,6 +88,10 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
         preferredVisibleTaskProviders,
         {
           gitlabInstalled: preflightStatusCurrent && preflightStatus?.glab?.installed === true,
+          bitbucketConnected:
+            preflightStatusCurrent &&
+            preflightStatus?.bitbucket?.configured === true &&
+            preflightStatus.bitbucket.authenticated === true,
           linearConnected: linearStatus.connected === true
         },
         defaultTaskSource
@@ -95,6 +100,8 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
       defaultTaskSource,
       linearStatus.connected,
       preferredVisibleTaskProviders,
+      preflightStatus?.bitbucket?.configured,
+      preflightStatus?.bitbucket?.authenticated,
       preflightStatusCurrent,
       preflightStatus?.glab?.installed
     ]
@@ -204,6 +211,17 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
                 onOpen={() => openTaskPage({ taskSource: 'gitlab' })}
               >
                 <Gitlab className="size-3.5" aria-hidden />
+              </TaskProviderShortcut>
+            ) : null}
+            {visibleTaskProviders.includes('bitbucket') ? (
+              <TaskProviderShortcut
+                label={translate(
+                  'auto.components.sidebar.SidebarNav.openBitbucketTasks',
+                  'Open Bitbucket tasks'
+                )}
+                onOpen={() => openTaskPage({ taskSource: 'bitbucket' })}
+              >
+                <BitbucketIcon className="size-3.5" />
               </TaskProviderShortcut>
             ) : null}
             {visibleTaskProviders.includes('linear') ? (

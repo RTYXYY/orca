@@ -1,6 +1,6 @@
 import Svg, { Path } from 'react-native-svg'
 
-export type TaskProviderLogoKind = 'github' | 'gitlab' | 'linear' | 'jira'
+export type TaskProviderLogoKind = 'github' | 'gitlab' | 'bitbucket' | 'linear' | 'jira'
 
 type Props = {
   provider: TaskProviderLogoKind
@@ -42,6 +42,15 @@ export function TaskProviderLogo({ provider, size = 16, color }: Props) {
       >
         {/* Why: lucide-react-native omits deprecated brand icons; keep parity with desktop lucide paths. */}
         <Path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18l-2.26 6.67H8.32L6.1 3.26A.42.42 0 0 0 6 3.08.38.38 0 0 0 5.74 3a.39.39 0 0 0-.23.07.42.42 0 0 0-.14.18L2 13.29a.74.74 0 0 0 .27.83L12 21l9.69-6.88a.71.71 0 0 0 .31-.83Z" />
+      </Svg>
+    )
+  }
+
+  if (provider === 'bitbucket') {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+        {/* Use flattened desktop Bitbucket mark to keep provider row monochrome. */}
+        <Path d="M.778 1.213a.768.768 0 0 0-.768.892l3.263 19.81c.084.5.515.868 1.022.873H19.95a.772.772 0 0 0 .77-.646l3.27-20.03a.768.768 0 0 0-.768-.891zM14.52 15.53H9.522L8.17 8.466h7.561z" />
       </Svg>
     )
   }

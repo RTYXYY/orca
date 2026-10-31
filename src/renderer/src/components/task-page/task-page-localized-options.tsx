@@ -2,6 +2,7 @@ import React from 'react'
 import { Github, Gitlab, LayoutGrid, List } from 'lucide-react'
 
 import { JiraIcon } from '@/components/icons/JiraIcon'
+import { BitbucketIcon } from '@/components/icons/BitbucketIcon'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { translate } from '@/i18n/i18n'
 import {
@@ -20,6 +21,7 @@ import type { TaskViewPresetId } from '../../../../shared/ui-chrome-types'
 
 export type GitLabTaskFilter = 'opened' | 'merged' | 'closed' | 'all'
 export type GitLabIssueFilter = 'opened' | 'assigned-to-me'
+export type BitbucketPRFilter = 'open' | 'mine' | 'needs-review'
 
 export type TaskQueryPreset = {
   id: TaskViewPresetId
@@ -70,6 +72,14 @@ export const getGitLabIssueFilters = createLocalizedCatalog(
   ]
 )
 
+export const getBitbucketPRFilters = createLocalizedCatalog(
+  (): { id: BitbucketPRFilter; label: string }[] => [
+    { id: 'open', label: translate('auto.components.TaskPage.606a85c774', 'Open') },
+    { id: 'mine', label: translate('auto.components.TaskPage.7698af5263', 'Mine') },
+    { id: 'needs-review', label: translate('auto.components.TaskPage.524f095d55', 'Needs review') }
+  ]
+)
+
 const getIssueTaskQueryPresets = createLocalizedCatalog((): TaskQueryPreset[] => [
   {
     id: 'issues',
@@ -115,6 +125,11 @@ export const getSourceOptions = createLocalizedCatalog((): SourceOption[] => [
     id: 'gitlab',
     label: translate('auto.components.TaskPage.11a828abf8', 'GitLab'),
     Icon: ({ className }) => <Gitlab className={className} />
+  },
+  {
+    id: 'bitbucket',
+    label: translate('auto.components.TaskPage.bitbucketSource', 'Bitbucket'),
+    Icon: ({ className }) => <BitbucketIcon className={className} />
   },
   {
     id: 'linear',

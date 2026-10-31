@@ -3,11 +3,17 @@ import { useRef, useState, useEffect, useMemo } from 'react'
 import { resolveVisibleTaskProvider } from '../../../../shared/task-providers'
 import type {
   GitLabTaskFilter,
-  GitLabIssueFilter
+  GitLabIssueFilter,
+  BitbucketPRFilter
 } from '@/components/task-page/task-page-localized-options'
 import type { GitLabWorkItem, GitLabTodo } from '../../../../shared/gitlab-types'
+import type { BitbucketWorkItem } from '../../../../shared/bitbucket-types'
 import { getRepoBackedTaskEmptyState } from './task-page-empty-state'
-import { isGitLabIssueFilter, isGitLabMRFilter } from './task-page-source-context'
+import {
+  isGitLabIssueFilter,
+  isGitLabMRFilter,
+  isBitbucketPRFilter
+} from './task-page-source-context'
 export function useTaskPageProviderState(model: TaskPageSourceAvailabilityModel) {
   const {
     settings,
@@ -99,6 +105,23 @@ export function useTaskPageProviderState(model: TaskPageSourceAvailabilityModel)
     }
     return gitlabItems
   }, [gitlabItems, gitlabView])
+
+  // Bitbucket Data Center PRs: fetched directly per selected repo like GitLab, no todos view.
+  const [bitbucketFilter, setBitbucketFilter] = useState<BitbucketPRFilter>('open')
+  const [bitbucketItems, setBitbucketItems] = useState<BitbucketWorkItem[]>([])
+  const [bitbucketLoading, setBitbucketLoading] = useState(false)
+  const [bitbucketError, setBitbucketError] = useState<string | null>(null)
+  const [bitbucketRefreshNonce, setBitbucketRefreshNonce] = useState(0)
+  const bitbucketEmptyState = useMemo(
+    () =>
+      getRepoBackedTaskEmptyState({
+        provider: 'bitbucket',
+        selectedRepoCount: selectedRepos.length
+      }),
+    [selectedRepos.length]
+  )
+  const activeBitbucketFilter = isBitbucketPRFilter(bitbucketFilter) ? bitbucketFilter : 'open'
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: mirrors the typed-model-extension pattern of the sibling task-page hooks.
   const nextModel = model as typeof model & {
     taskSourceManuallyChangedRef: typeof taskSourceManuallyChangedRef
     lastPageTaskSourceRef: typeof lastPageTaskSourceRef
@@ -134,6 +157,18 @@ export function useTaskPageProviderState(model: TaskPageSourceAvailabilityModel)
     gitlabFilterIsValid: typeof gitlabFilterIsValid
     activeGitlabFilter: typeof activeGitlabFilter
     displayedGitLabItems: typeof displayedGitLabItems
+    bitbucketFilter: typeof bitbucketFilter
+    setBitbucketFilter: typeof setBitbucketFilter
+    bitbucketItems: typeof bitbucketItems
+    setBitbucketItems: typeof setBitbucketItems
+    bitbucketLoading: typeof bitbucketLoading
+    setBitbucketLoading: typeof setBitbucketLoading
+    bitbucketError: typeof bitbucketError
+    setBitbucketError: typeof setBitbucketError
+    bitbucketRefreshNonce: typeof bitbucketRefreshNonce
+    setBitbucketRefreshNonce: typeof setBitbucketRefreshNonce
+    bitbucketEmptyState: typeof bitbucketEmptyState
+    activeBitbucketFilter: typeof activeBitbucketFilter
   }
   nextModel.taskSourceManuallyChangedRef = taskSourceManuallyChangedRef
   nextModel.lastPageTaskSourceRef = lastPageTaskSourceRef
@@ -169,6 +204,18 @@ export function useTaskPageProviderState(model: TaskPageSourceAvailabilityModel)
   nextModel.gitlabFilterIsValid = gitlabFilterIsValid
   nextModel.activeGitlabFilter = activeGitlabFilter
   nextModel.displayedGitLabItems = displayedGitLabItems
+  nextModel.bitbucketFilter = bitbucketFilter
+  nextModel.setBitbucketFilter = setBitbucketFilter
+  nextModel.bitbucketItems = bitbucketItems
+  nextModel.setBitbucketItems = setBitbucketItems
+  nextModel.bitbucketLoading = bitbucketLoading
+  nextModel.setBitbucketLoading = setBitbucketLoading
+  nextModel.bitbucketError = bitbucketError
+  nextModel.setBitbucketError = setBitbucketError
+  nextModel.bitbucketRefreshNonce = bitbucketRefreshNonce
+  nextModel.setBitbucketRefreshNonce = setBitbucketRefreshNonce
+  nextModel.bitbucketEmptyState = bitbucketEmptyState
+  nextModel.activeBitbucketFilter = activeBitbucketFilter
   return nextModel
 }
 export type TaskPageProviderStateModel = ReturnType<typeof useTaskPageProviderState>

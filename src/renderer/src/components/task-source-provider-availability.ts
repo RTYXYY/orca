@@ -22,7 +22,7 @@ function isDesktopOwnedHost(hostId: TaskSourceContext['hostId']): boolean {
 }
 
 function getRepoBackedProviderToolStatus(
-  provider: Extract<TaskProvider, 'github' | 'gitlab'>,
+  provider: Extract<TaskProvider, 'github' | 'gitlab' | 'bitbucket'>,
   preflightStatus: PreflightStatus | null
 ): ProviderAvailabilityStatus | null {
   if (!preflightStatus) {
@@ -30,6 +30,13 @@ function getRepoBackedProviderToolStatus(
   }
   if (provider === 'github') {
     return preflightStatus.gh
+  }
+  if (provider === 'bitbucket') {
+    // Why: Bitbucket DC is token-backed, so configured+authenticated preflight is its availability.
+    const status = preflightStatus.bitbucket
+    return status
+      ? { installed: status.configured === true, authenticated: status.authenticated === true }
+      : 'unsupported'
   }
   // Older servers can lack GitLab preflight; report a capability gap instead of a fixable missing glab install.
   return Object.hasOwn(preflightStatus, 'glab')
@@ -53,7 +60,7 @@ function getProviderReason(
 }
 
 export function getRepoBackedProviderAvailability(args: {
-  provider: Extract<TaskProvider, 'github' | 'gitlab'>
+  provider: Extract<TaskProvider, 'github' | 'gitlab' | 'bitbucket'>
   contexts: readonly TaskSourceContext[]
   preflightStatus: PreflightStatus | null
   preflightReady: boolean

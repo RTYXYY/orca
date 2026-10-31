@@ -72,6 +72,7 @@ export function getTaskSourceContextSummary(
   switch (args.provider) {
     case 'github':
     case 'gitlab':
+    case 'bitbucket':
       return getRepoBackedTaskSourceSummary(args)
     case 'linear':
       return getAccountBackedTaskSourceSummary(args.providerLabel, {
@@ -221,6 +222,10 @@ function getProviderIdentityLabel(
       return identity.namespace && identity.project
         ? `${identity.namespace}/${identity.project}`
         : (identity.projectId ?? null)
+    case 'bitbucket':
+      return identity.projectKey && identity.repoSlug
+        ? `${identity.projectKey}/${identity.repoSlug}`
+        : null
     case 'linear':
       return identity.workspaceName ?? identity.workspaceId ?? null
     case 'jira':

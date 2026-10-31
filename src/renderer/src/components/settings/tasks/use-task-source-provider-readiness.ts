@@ -57,6 +57,10 @@ export function useTaskSourceProviderReadiness(
     reviewReadyForConnection &&
     preflightStatus?.glab?.installed === true &&
     preflightStatus.glab.authenticated === true
+  const bitbucketConnected =
+    reviewReadyForConnection &&
+    preflightStatus?.bitbucket?.configured === true &&
+    preflightStatus.bitbucket.authenticated === true
   const jiraChecking = jiraStatusContextKey !== providerRuntimeContextKey || !jiraStatusChecked
   const jiraConnected = !jiraChecking && jiraStatus.connected === true
   const linearChecking =
@@ -79,6 +83,12 @@ export function useTaskSourceProviderReadiness(
         unavailable: reviewUnavailable,
         visible: visible.has('gitlab')
       },
+      bitbucket: {
+        connected: bitbucketConnected,
+        checking: reviewChecking,
+        unavailable: reviewUnavailable,
+        visible: visible.has('bitbucket')
+      },
       linear: {
         connected: linearConnected,
         checking: linearChecking,
@@ -100,6 +110,7 @@ export function useTaskSourceProviderReadiness(
     jiraConnected,
     linearChecking,
     linearConnected,
+    bitbucketConnected,
     linearSkillInstalled,
     linearSkillLoading,
     linearSkillSettled,

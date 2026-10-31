@@ -3,6 +3,7 @@ import { TaskPageGitHubFilters } from './github/Filters'
 import { TaskPageLinearFilters } from './linear/Filters'
 import { TaskPageJiraFilters } from './jira/Filters'
 import { TaskPageGitLabFilters } from './gitlab/Filters'
+import { TaskPageBitbucketFilters } from './bitbucket/Filters'
 export function TaskPageProviderFilters({
   model
 }: {
@@ -18,5 +19,7 @@ export function TaskPageProviderFilters({
     <TaskPageJiraFilters model={model} />
   ) : taskSource === 'gitlab' ? (
     <TaskPageGitLabFilters model={model} />
+  ) : taskSource === 'bitbucket' ? (
+    <TaskPageBitbucketFilters model={model} />
   ) : null
 }

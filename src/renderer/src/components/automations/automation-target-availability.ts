@@ -22,6 +22,8 @@ import type { Repo } from '../../../../shared/repo-types'
 import type { RuntimeEnvironmentStatus } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import type { Worktree } from '../../../../shared/worktree/types'
 import type { RuntimeEnvironmentSshBucket } from '../../store/slices/runtime-environment-ssh'
+import type { TaskSourceContext } from '../../../../shared/task-source-context'
+import type { TaskSourceHostAvailability } from '../task-source-context-summary'
 
 import type { AutomationTargetAvailability } from './automation-target-availability-types'
 export type { AutomationTargetAvailability } from './automation-target-availability-types'
@@ -36,6 +38,7 @@ type AutomationTargetAvailabilityArgs = {
   sshStateByEnvironment?: ReadonlyMap<string, RuntimeEnvironmentSshBucket>
   runtimeStatusByEnvironmentId?: ReadonlyMap<string, RuntimeEnvironmentStatus>
   automationHostTarget?: AutomationHostTarget | null
+  sourceHostAvailability?: readonly TaskSourceHostAvailability[]
 }
 
 export function getAutomationTargetAvailability({
@@ -47,7 +50,8 @@ export function getAutomationTargetAvailability({
   sshConnectionStates,
   sshStateByEnvironment,
   runtimeStatusByEnvironmentId,
-  automationHostTarget
+  automationHostTarget,
+  sourceHostAvailability
 }: AutomationTargetAvailabilityArgs): AutomationTargetAvailability {
   const reselection = automationHostReselectionMessage(capturedOwner)
   if (reselection) {
@@ -121,6 +125,14 @@ export function getAutomationTargetAvailability({
     return unavailable('missing-workspace', 'The target workspace is no longer available.')
   }
 
+  const sourceAvailability = getAutomationSourceAvailability(
+    automation.sourceContext,
+    sourceHostAvailability
+  )
+  if (sourceAvailability) {
+    return sourceAvailability
+  }
+
   const sshTargetId = getAutomationSshTargetId(automation, repo)
   if (!sshTargetId) {
     return { canRunNow: true, reason: 'available', message: null }
@@ -148,6 +160,88 @@ export function getAutomationTargetAvailability({
     case 'disconnected':
     case 'error':
       return unavailable('ssh-unavailable', 'Connect this SSH host before running manually.')
+  }
+}
+
+function getAutomationSourceAvailability(
+  sourceContext: TaskSourceContext | null | undefined,
+  sourceHostAvailability: readonly TaskSourceHostAvailability[] | undefined
+): AutomationTargetAvailability | null {
+  if (!sourceContext) {
+    return null
+  }
+  const availability = sourceHostAvailability?.find(
+    (entry) => entry.hostId === sourceContext.hostId
+  )
+  if (!availability) {
+    return null
+  }
+  const providerLabel = getAutomationSourceProviderLabel(sourceContext.provider)
+  switch (availability.reason) {
+    case undefined:
+      break
+    case 'missing-provider-auth':
+      return unavailable(
+        'source-auth-needed',
+        `Connect the saved ${providerLabel} source account before running manually.`
+      )
+    case 'unavailable-source-tool':
+      return unavailable(
+        'source-tool-unavailable',
+        `Install or configure the ${providerLabel} source tool before running manually.`
+      )
+    case 'unsupported-provider':
+    case 'missing-task-source-capability':
+      return unavailable(
+        'source-provider-unsupported',
+        `The saved ${providerLabel} source is not supported on this automation host.`
+      )
+    case 'checking-task-source-capability':
+      return unavailable(
+        'source-host-unavailable',
+        `Checking the saved ${providerLabel} source host before running manually.`
+      )
+  }
+  if (
+    availability.health === 'disconnected' ||
+    availability.health === 'blocked' ||
+    availability.health === 'error' ||
+    availability.status === 'disconnected' ||
+    availability.status === 'auth-failed' ||
+    availability.status === 'reconnection-failed' ||
+    availability.status === 'error'
+  ) {
+    return unavailable(
+      'source-host-unavailable',
+      `Reconnect the saved ${providerLabel} source host before running manually.`
+    )
+  }
+  if (
+    availability.health === 'connecting' ||
+    availability.status === 'connecting' ||
+    availability.status === 'deploying-relay' ||
+    availability.status === 'reconnecting'
+  ) {
+    return unavailable(
+      'source-host-unavailable',
+      `The saved ${providerLabel} source host is still connecting.`
+    )
+  }
+  return null
+}
+
+function getAutomationSourceProviderLabel(provider: TaskSourceContext['provider']): string {
+  switch (provider) {
+    case 'github':
+      return 'GitHub'
+    case 'gitlab':
+      return 'GitLab'
+    case 'bitbucket':
+      return 'Bitbucket'
+    case 'linear':
+      return 'Linear'
+    case 'jira':
+      return 'Jira'
   }
 }
 

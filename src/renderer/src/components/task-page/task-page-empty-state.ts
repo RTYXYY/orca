@@ -1,6 +1,6 @@
 import { translate } from '@/i18n/i18n'
 
-export type RepoBackedTaskEmptyStateProvider = 'github' | 'gitlab'
+export type RepoBackedTaskEmptyStateProvider = 'github' | 'gitlab' | 'bitbucket'
 
 export type RepoBackedTaskEmptyState = {
   title: string
@@ -33,6 +33,18 @@ export function getRepoBackedTaskEmptyState(args: {
       description: translate(
         'auto.components.taskPageEmptyState.changeQueryDescription',
         'Change the query or clear it.'
+      )
+    }
+  }
+  if (args.provider === 'bitbucket') {
+    return {
+      title: translate(
+        'auto.components.taskPageEmptyState.noBitbucketPRsTitle',
+        'No Bitbucket pull requests'
+      ),
+      description: translate(
+        'auto.components.taskPageEmptyState.noBitbucketPRsDescription',
+        'No Bitbucket Data Center pull requests match this filter.'
       )
     }
   }
