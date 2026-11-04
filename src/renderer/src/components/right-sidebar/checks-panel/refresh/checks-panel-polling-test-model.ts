@@ -7,6 +7,7 @@ type PollingInput = Parameters<typeof useChecksPanelPolling>[0]
 export function createModel(overrides: Partial<PollingInput> = {}): PollingInput {
   const fetchPRChecks = vi.fn<() => Promise<PRCheckDetail[]>>().mockResolvedValue([])
   return {
+    activeBitbucketReview: null,
     activeGitLabReview: null,
     activeWorktree: null,
     asyncResultKeyRef: { current: 'cache::main::42' },

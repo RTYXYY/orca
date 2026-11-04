@@ -17,7 +17,12 @@ import type { ChecksPanelPollingState } from '../refresh/use-checks-panel-pollin
 import { buildSnapshottedThreadResolver } from '../comments/pr-comment-snapshotted-thread-resolver'
 import { markPRCommentThreadResolved } from '@/lib/pr-comment-thread-resolution'
 import { resolveGitLabMRDiscussionForChecks } from '../gitlab-review-client'
+import {
+  addBitbucketReviewComment,
+  replyToBitbucketReviewComment
+} from '../bitbucket-review-client'
 import { clearPRCommentsListSelection } from '../comments/pr-comments-list-selection'
+import type { Repo } from '../../../../../../shared/repo-types'
 import { translate } from '@/i18n/i18n'
 import type { ChecksAgentComposerState } from '../panel-state-types'
 import type { ChecksPanelReview } from '../checks-panel-review'
@@ -39,7 +44,7 @@ type ChecksPanelAiAcknowledgementInput = Pick<
   | 'commentResolutionLaunchAcceptedRef'
 > &
   Pick<ChecksPanelReviewDataState, 'fetchComments'> &
-  Pick<ChecksPanelPollingState, 'fetchGitLabDetails'>
+  Pick<ChecksPanelPollingState, 'fetchGitLabDetails' | 'fetchBitbucketDetails'>
 
 export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgementInput) {
   const {
@@ -51,6 +56,7 @@ export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgem
     commentsSelectionClearTokenRef,
     fetchComments,
     fetchGitLabDetails,
+    fetchBitbucketDetails,
     pendingCommentResolutionRef,
     resolveReviewThread,
     setCommentResolutionAckBusyNow,
@@ -76,9 +82,13 @@ export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgem
         await fetchGitLabDetails({ commitAsCurrent: true })
         return
       }
+      if (provider === 'bitbucket') {
+        await fetchBitbucketDetails({ commitAsCurrent: true })
+        return
+      }
       await fetchComments({ force: true, userRefresh: true })
     },
-    [fetchComments, fetchGitLabDetails]
+    [fetchComments, fetchGitLabDetails, fetchBitbucketDetails]
   )
 
   const refreshCommentsRef = useRef(refreshCommentsAfterBulkResolve)
@@ -95,7 +105,10 @@ export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgem
       const isPanelStillOnLaunchReview = (): boolean =>
         checksPanelReviewStableKey(asyncResultKeyRef.current) === launchStableKey
       const githubTarget = resolution.githubTarget
-      const canReplyOnHost = resolution.provider === 'github' && githubTarget != null
+      const bitbucketTarget = resolution.bitbucketTarget
+      const canReplyOnHost =
+        (resolution.provider === 'github' && githubTarget != null) ||
+        (resolution.provider === 'bitbucket' && bitbucketTarget != null)
       // Only GitHub supports fixing replies; missing targets matter only when selected comments need replies.
       let lastHostError =
         resolution.provider === 'github' &&
@@ -110,6 +123,7 @@ export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgem
         provider: resolution.provider,
         githubResolveTarget: resolution.githubResolveTarget,
         gitlabTarget: resolution.gitlabTarget,
+        bitbucketTarget: resolution.bitbucketTarget,
         resolveReviewThread,
         resolveGitLabDiscussion: resolveGitLabMRDiscussionForChecks,
         isPanelStillOnLaunchReview,
@@ -132,6 +146,40 @@ export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgem
           resolveThread: resolveSnapshottedThread,
           canReply: canReplyOnHost,
           replyInThread: async (comment, body) => {
+            if (resolution.provider === 'bitbucket') {
+              if (!bitbucketTarget || !canPostPRReviewThreadReply(comment)) {
+                return false
+              }
+              try {
+                const result = await replyToBitbucketReviewComment({
+                  repo: {
+                    id: bitbucketTarget.repoId,
+                    path: bitbucketTarget.repoPath
+                  } as unknown as Repo,
+                  prNumber: bitbucketTarget.prNumber,
+                  parentCommentId: comment.id,
+                  body
+                })
+                if (result.ok) {
+                  if (isPanelStillOnLaunchReview()) {
+                    setComments((prev) =>
+                      mergePRCommentIntoList(
+                        prev,
+                        attachPRReviewReplyParent(result.comment, comment)
+                      )
+                    )
+                  }
+                  return true
+                }
+                lastHostError = result.error
+                console.warn('In-thread fixing reply failed:', result.error)
+                return false
+              } catch (err) {
+                lastHostError = err instanceof Error ? err.message : String(err)
+                console.warn('Failed to post in-thread fixing reply for review comment:', err)
+                return false
+              }
+            }
             if (!githubTarget || !canPostPRReviewThreadReply(comment)) {
               return false
             }
@@ -181,6 +229,34 @@ export function useChecksPanelAiAcknowledgement(model: ChecksPanelAiAcknowledgem
           },
           // Conversation/review-summary comments lack nested replies; combine their acknowledgements into one body.
           replyAsConversation: async (body) => {
+            if (resolution.provider === 'bitbucket') {
+              if (!bitbucketTarget) {
+                return false
+              }
+              try {
+                const result = await addBitbucketReviewComment({
+                  repo: {
+                    id: bitbucketTarget.repoId,
+                    path: bitbucketTarget.repoPath
+                  } as unknown as Repo,
+                  prNumber: bitbucketTarget.prNumber,
+                  body
+                })
+                if (result.ok) {
+                  if (isPanelStillOnLaunchReview()) {
+                    await refreshCommentsRef.current('bitbucket')
+                  }
+                  return true
+                }
+                lastHostError = result.error
+                console.warn('Conversation fixing reply failed:', result.error)
+                return false
+              } catch (err) {
+                lastHostError = err instanceof Error ? err.message : String(err)
+                console.warn('Failed to post conversation fixing reply for review comment:', err)
+                return false
+              }
+            }
             if (!githubTarget) {
               return false
             }

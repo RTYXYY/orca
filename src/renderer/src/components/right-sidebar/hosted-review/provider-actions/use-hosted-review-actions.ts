@@ -15,7 +15,7 @@ import {
   setGitHubHostedReviewAutoMerge,
   updateGitHubHostedReviewState
 } from './hosted-review-github-actions'
-import { mergeBitbucketHostedReview } from './hosted-review-bitbucket-actions'
+import { mergeBitbucketHostedReview } from '../../hosted-review-bitbucket-actions'
 import { translate } from '@/i18n/i18n'
 import { getHostedReviewStateChangeCopy } from './hosted-review-state-change-copy'
 import { buildGitHubPRStackMergeConfirmation } from './github-pr-stack-confirmation'

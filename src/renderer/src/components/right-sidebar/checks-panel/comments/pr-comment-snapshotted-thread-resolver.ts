@@ -1,8 +1,10 @@
 import type { HostedReviewInfo } from '../../../../../../shared/source-control/hosted-review/hosted-review-contracts'
 import type {
+  PendingPRCommentAiAckBitbucketTarget,
   PendingPRCommentAiAckGithubResolveTarget,
   PendingPRCommentAiAckGitlabTarget
 } from './pr-comments-ai-launch-ack'
+import { resolveBitbucketPRCommentThread } from '../bitbucket-review-client'
 
 /** Host outcome shape; GitLab reports a message, GitHub only reports success. */
 export type SnapshottedThreadResolveOutcome = { ok: boolean; error?: string }
@@ -11,6 +13,7 @@ export type SnapshottedThreadResolverDeps = {
   provider: HostedReviewInfo['provider']
   githubResolveTarget?: PendingPRCommentAiAckGithubResolveTarget
   gitlabTarget?: PendingPRCommentAiAckGitlabTarget
+  bitbucketTarget?: PendingPRCommentAiAckBitbucketTarget
   resolveReviewThread: (
     repoPath: string,
     prNumber: number,
@@ -70,6 +73,17 @@ async function resolveOnHost(
         discussionId: threadId,
         resolved: true,
         repoOwnerExecutionHostId: deps.gitlabTarget.ownerHostId
+      })
+    }
+    if (deps.provider === 'bitbucket') {
+      if (!deps.bitbucketTarget) {
+        return { ok: false }
+      }
+      return await resolveBitbucketPRCommentThread({
+        repoPath: deps.bitbucketTarget.repoPath,
+        repoId: deps.bitbucketTarget.repoId,
+        prNumber: deps.bitbucketTarget.prNumber,
+        threadId
       })
     }
     if (deps.provider !== 'github' || !deps.githubResolveTarget) {

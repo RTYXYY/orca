@@ -13941,7 +13941,10 @@
             "closeReviewFailed": "Failed to close {{review}}",
             "reopenReviewFailed": "Failed to reopen {{review}}",
             "markReadyFailed": "Failed to mark {{review}} ready for review",
-            "bitbucketMerge": "Merge"
+            "bitbucketMerge": "Merge",
+            "bitbucketApprovedToast": "Pull request approved",
+            "bitbucketChangesRequestedToast": "Changes requested",
+            "bitbucketReviewClearedToast": "Review cleared"
           },
           "PortsPanel": {
             "3ea4a02a8f": "Cancel",
@@ -15355,6 +15358,28 @@
                 }
               }
             }
+          },
+          "BitbucketPRTasks": {
+            "addPlaceholder": "Add a task…",
+            "addTask": "Add task",
+            "empty": "No tasks on this pull request",
+            "openCount_one": "{{count}} open",
+            "openCount_other": "{{count}} open",
+            "reopenTask": "Reopen task",
+            "resolveTask": "Mark task as done",
+            "title": "Tasks"
+          },
+          "BitbucketReviewActions": {
+            "approve": "Approve",
+            "approveTooltip": "Approve this pull request as the authenticated user",
+            "approving": "Updating...",
+            "confirmRequestChanges": "Confirm needs work",
+            "requestChanges": "Needs work",
+            "requestChangesTooltip": "Mark this pull request as needing work before it can merge",
+            "requestingChanges": "Marking needs work...",
+            "clearNeedsWork": "Clear needs work",
+            "undoApprove": "Undo approve",
+            "undoApproveTooltip": "Clear your approval of this pull request"
           }
         }
       },

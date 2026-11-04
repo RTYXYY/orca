@@ -265,6 +265,13 @@ export type PendingPRCommentAiAckGitlabTarget = {
   ownerHostId: string
 }
 
+/** Bitbucket Data Center ack target; nested replies use comment ids, no thread resolve API. */
+export type PendingPRCommentAiAckBitbucketTarget = {
+  repoPath: string
+  repoId: string
+  prNumber: number
+}
+
 /** What a queued comment-resolution launch must still ack once its prompt is delivered. */
 export type PendingPRCommentAiAck = {
   reviewContextKey: string
@@ -274,6 +281,7 @@ export type PendingPRCommentAiAck = {
   githubTarget?: PendingPRCommentAiAckGithubTarget
   githubResolveTarget?: PendingPRCommentAiAckGithubResolveTarget
   gitlabTarget?: PendingPRCommentAiAckGitlabTarget
+  bitbucketTarget?: PendingPRCommentAiAckBitbucketTarget
 }
 
 /** Durable pending ack payload so dialog close / re-renders cannot drop it before launch. */

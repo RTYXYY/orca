@@ -1,10 +1,16 @@
 import { defineMethod } from '../core'
 import {
+  BitbucketAddPRTask,
   BitbucketMergePr,
+  BitbucketPRComment,
   BitbucketPRCommentReply,
+  BitbucketPRCommentThreadResolve,
   BitbucketPRComments,
   BitbucketPRLineComment,
-  BitbucketPRList
+  BitbucketPRList,
+  BitbucketPRReviewStatus,
+  BitbucketPRTasks,
+  BitbucketSetPRTaskState
 } from '../../../../shared/rpc-contract/bitbucket-params'
 
 export const BITBUCKET_METHODS = [
@@ -28,6 +34,13 @@ export const BITBUCKET_METHODS = [
     params: BitbucketPRComments,
     handler: async (params, { runtime }) =>
       runtime.getBitbucketRepoPRComments(params.repo, params.prNumber)
+  }),
+  defineMethod({
+    name: 'bitbucket.addPRComment',
+    permission: 'workspace',
+    params: BitbucketPRComment,
+    handler: async (params, { runtime }) =>
+      runtime.addBitbucketRepoPRComment(params.repo, params.prNumber, params.body)
   }),
   defineMethod({
     name: 'bitbucket.addPRCommentReply',
@@ -55,5 +68,45 @@ export const BITBUCKET_METHODS = [
         fromHash: params.fromHash,
         toHash: params.toHash
       })
+  }),
+  defineMethod({
+    name: 'bitbucket.resolvePRCommentThread',
+    permission: 'workspace',
+    params: BitbucketPRCommentThreadResolve,
+    handler: async (params, { runtime }) =>
+      runtime.resolveBitbucketRepoPRCommentThread(
+        params.repo,
+        params.prNumber,
+        params.threadRootCommentId,
+        params.resolved
+      )
+  }),
+  defineMethod({
+    name: 'bitbucket.setPRReviewStatus',
+    permission: 'workspace',
+    params: BitbucketPRReviewStatus,
+    handler: async (params, { runtime }) =>
+      runtime.setBitbucketRepoPRReviewStatus(params.repo, params.prNumber, params.status)
+  }),
+  defineMethod({
+    name: 'bitbucket.prTasks',
+    permission: 'workspace',
+    params: BitbucketPRTasks,
+    handler: async (params, { runtime }) =>
+      runtime.getBitbucketRepoPRTasks(params.repo, params.prNumber)
+  }),
+  defineMethod({
+    name: 'bitbucket.addPRTask',
+    permission: 'workspace',
+    params: BitbucketAddPRTask,
+    handler: async (params, { runtime }) =>
+      runtime.addBitbucketRepoPRTask(params.repo, params.prNumber, params.text)
+  }),
+  defineMethod({
+    name: 'bitbucket.setPRTaskState',
+    permission: 'workspace',
+    params: BitbucketSetPRTaskState,
+    handler: async (params, { runtime }) =>
+      runtime.setBitbucketRepoPRTaskState(params.repo, params.prNumber, params.taskId, params.state)
   })
 ]

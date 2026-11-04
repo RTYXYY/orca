@@ -177,7 +177,14 @@ export function useChecksPanelCommentResolution(model: ChecksPanelCommentResolut
     ]
   )
 
-  const canTargetPRComments = Boolean(repo && prNumber && pr?.prRepo)
+  const provider = activeReview?.provider ?? 'github'
+  // Bitbucket targets come from the hosted review; GitHub keeps its stricter prRepo requirement.
+  const canTargetPRComments = Boolean(
+    repo &&
+    ((provider === 'bitbucket' && activeReview?.number) ||
+      (provider === 'github' && prNumber && pr?.prRepo) ||
+      (provider === 'gitlab' && activeGitLabReview))
+  )
   const commentsDisabledReason = canTargetPRComments
     ? undefined
     : translate(

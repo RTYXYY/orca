@@ -92,16 +92,28 @@ describe('getBitbucketServerPRComments', () => {
     _resetBitbucketServerRepoRefCache()
   })
 
-  it('paginates comments and maps threads via parent chains', async () => {
+  it('fetches per-file and activity comments, mapping threads via parent chains', async () => {
+    const orphanedAnchorComment = {
+      id: 103,
+      text: 'Orphaned anchor comment',
+      createdDate: 1_700_000_002_000,
+      author: { name: 'carol' },
+      anchor: { path: 'src/old.ts', line: 7, orphaned: true }
+    }
+    const generalComment = {
+      id: 104,
+      text: 'General comment',
+      createdDate: 1_700_000_003_000,
+      author: { name: 'dave' }
+    }
     await withServerAndRepo(
       (_req, url, res) => {
-        if (url.pathname !== '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/comments') {
-          res.writeHead(404)
-          res.end()
+        const prBase = '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12'
+        if (url.pathname === `${prBase}/changes`) {
+          sendJson(res, 200, { values: [{ path: 'src/app.ts' }], isLastPage: true })
           return
         }
-        const start = Number(url.searchParams.get('start') ?? '0')
-        if (start === 0) {
+        if (url.pathname === `${prBase}/comments` && url.searchParams.get('path')) {
           sendJson(res, 200, {
             values: [
               {
@@ -120,29 +132,24 @@ describe('getBitbucketServerPRComments', () => {
                 anchor: { path: 'src/app.ts', line: 42 }
               }
             ],
-            isLastPage: false,
-            nextPageStart: 2
+            isLastPage: true
           })
           return
         }
-        sendJson(res, 200, {
-          values: [
-            {
-              id: 103,
-              text: 'Orphaned anchor comment',
-              createdDate: 1_700_000_002_000,
-              author: { name: 'carol' },
-              anchor: { path: 'src/old.ts', line: 7, orphaned: true }
-            },
-            {
-              id: 104,
-              text: 'General comment',
-              createdDate: 1_700_000_003_000,
-              author: { name: 'dave' }
-            }
-          ],
-          isLastPage: true
-        })
+        if (url.pathname === `${prBase}/activity`) {
+          // Orphaned-anchored and general comments surface only via the activity feed.
+          sendJson(res, 200, {
+            values: [
+              { action: 'COMMENT', comment: orphanedAnchorComment },
+              { action: 'COMMENT', comment: generalComment },
+              { action: 'OPENED', comment: null }
+            ],
+            isLastPage: true
+          })
+          return
+        }
+        res.writeHead(404)
+        res.end()
       },
       async (origin, repoPath, seen) => {
         process.env.ORCA_BITBUCKET_SERVER_BASE_URL = origin
@@ -157,7 +164,8 @@ describe('getBitbucketServerPRComments', () => {
           line: 42,
           threadId: '101',
           author: 'alice',
-          isOutdated: false
+          isOutdated: false,
+          isResolved: false
         })
         // Why: replies inherit the root's thread id so the renderer can group them.
         expect(byId.get(102)).toMatchObject({ threadId: '101' })
@@ -165,8 +173,11 @@ describe('getBitbucketServerPRComments', () => {
         expect(byId.get(103)?.path).toBeUndefined()
         expect(byId.get(104)?.path).toBeUndefined()
         expect(seen.map((r) => r.path)).toEqual([
-          '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/comments?start=0&limit=100',
-          '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/comments?start=2&limit=100'
+          '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/changes?start=0&limit=100',
+          '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/comments?path=src%2Fapp.ts&start=0&limit=100',
+          // Why: newer DC exposes /activities; this mock only answers legacy /activity, proving the fallback.
+          '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/activities?start=0&limit=100',
+          '/rest/api/1.0/projects/prj/repos/repo/pull-requests/12/activity?start=0&limit=100'
         ])
       }
     )

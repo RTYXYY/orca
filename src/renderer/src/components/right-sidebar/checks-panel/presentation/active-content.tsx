@@ -21,6 +21,7 @@ import { openAnnotationLocation } from '@/components/editor/check-details/action
 import { translate } from '@/i18n/i18n'
 import type { ChecksPanelActiveContentModel } from './active-content-props'
 import { ChecksPanelReviewHeader } from './review-header'
+import { BitbucketPRTasksSection } from '../../BitbucketPRTasksSection'
 
 export function ChecksPanelActiveContent({
   model
@@ -31,6 +32,7 @@ export function ChecksPanelActiveContent({
     activeConnectionId,
     activeConflictReview,
     activeGitLabReview,
+    activeBitbucketReview,
     activeReview,
     activeSourceControlLaunchPlatform,
     activeWorktree,
@@ -203,6 +205,13 @@ export function ChecksPanelActiveContent({
             onRefreshReview={refreshHostedReviewAfterMutation}
           />
         )}
+        {activeReview.provider === 'bitbucket' && activeWorktree && repo && (
+          <BitbucketPRTasksSection
+            repo={repo}
+            prNumber={activeReview.number}
+            refreshKey={stateRequestKey ?? String(activeReview.number)}
+          />
+        )}
       </div>
 
       {shouldShowReviewTriageStrip && sourceControlAiActionsVisible && (
@@ -237,6 +246,14 @@ export function ChecksPanelActiveContent({
           checks={checks}
           pipelineCheck={gitLabPipelineCheck}
           checksError={manualRefreshError ? null : checksError}
+          checksEmptyMessage={
+            activeBitbucketReview
+              ? translate(
+                  'auto.components.right.sidebar.checks.panel.content.noBuildStatusReported',
+                  'No build status reported'
+                )
+              : undefined
+          }
           checksLoading={checksLoading}
           checkDetailsContextKey={stateRequestKey}
           onLoadCheckDetails={handleLoadCheckDetails}
@@ -255,15 +272,15 @@ export function ChecksPanelActiveContent({
         selectionClearRequest={commentsSelectionClearRequest}
         resolveCommentsWithAIDisabled={Boolean(resolveCommentsWithAIDisabledReason)}
         resolveCommentsWithAIDisabledReason={resolveCommentsWithAIDisabledReason}
-        onAddComment={pr ? handleAddPRComment : undefined}
+        onAddComment={pr || activeBitbucketReview ? handleAddPRComment : undefined}
         onResolveSelectedCommentsWithAI={
           sourceControlAiActionsVisible ? handleResolveCommentsWithAI : undefined
         }
-        onReply={pr ? handleReplyToComment : undefined}
+        onReply={pr || activeBitbucketReview ? handleReplyToComment : undefined}
         onResolve={pr || activeGitLabReview ? handleResolve : undefined}
         onEditComment={pr ? handleEditComment : undefined}
         onDeleteComment={pr ? handleDeleteComment : undefined}
-        onSetReaction={canTargetPRComments ? handleSetReaction : undefined}
+        onSetReaction={canTargetPRComments && pr ? handleSetReaction : undefined}
         onOpenLocation={
           activeWorktree
             ? (path, line) =>

@@ -26,6 +26,7 @@ export function ChecksList(props: ChecksListProps): React.JSX.Element {
     checks,
     pipelineCheck,
     checksError,
+    checksEmptyMessage,
     checksLoading,
     checkDetailsContextKey,
     detailsStickySurface = 'sidebar',
@@ -129,10 +130,11 @@ export function ChecksList(props: ChecksListProps): React.JSX.Element {
         </div>
       ) : checks.length === 0 ? (
         <div className="px-4 py-8 text-[11px] text-muted-foreground">
-          {translate(
-            'auto.components.right.sidebar.checks.panel.content.991f50c7e4',
-            'No checks configured'
-          )}
+          {checksEmptyMessage ??
+            translate(
+              'auto.components.right.sidebar.checks.panel.content.991f50c7e4',
+              'No checks configured'
+            )}
         </div>
       ) : !checksExpanded ? null : (
         <>

@@ -29,6 +29,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
   const {
     activeConnectionId,
     activeGitLabReview,
+    activeBitbucketReview,
     activeWorktreeId,
     activeWorktreePath,
     activeWorktreePushTarget,
@@ -95,18 +96,18 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     const refreshProvider = checksPanelManualRefreshProvider(model)
     let refreshOutcome = 'started'
     setIsRefreshing(true)
-    recordChecksPanelPRRefreshBreadcrumb({
-      event: 'start',
+    const breadcrumbBase = () => ({
       provider: refreshProvider,
       repoId: repo.id,
       worktreeId: activeWorktreeId,
       branch,
       prCacheKey,
-      prNumber: activeGitLabReview?.number ?? prNumber,
-      prState: activeGitLabReview?.state ?? pr?.state,
+      prNumber: activeGitLabReview?.number ?? activeBitbucketReview?.number ?? prNumber,
+      prState: activeGitLabReview?.state ?? activeBitbucketReview?.state ?? pr?.state,
       prChecksStatus: pr?.checksStatus,
       refreshState: prCacheKey ? useAppStore.getState().prRefreshStates[prCacheKey] : null
     })
+    recordChecksPanelPRRefreshBreadcrumb({ event: 'start', ...breadcrumbBase() })
     try {
       if (activeWorktreeId && activeWorktreePath && !isFolder && ownerTarget) {
         // Why one resolution: a same-path twin must not get this copy's transport, SSH target or answer.
@@ -249,6 +250,13 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
         }
         // Forced refresh may discover the number before React repaints; mark these checks current now.
         asyncResultKeyRef.current = prRequestKey
+        const warnDropped = (label: string, err: unknown, clear: () => void) => {
+          if (!isCurrentRequest() || !isCurrentAsyncResult(prRequestKey)) {
+            return
+          }
+          console.warn(`Failed to fetch ${label}:`, err)
+          clear()
+        }
         // Pass fresh headSha directly; the closure predates force-pushes and PR-number changes.
         const refreshedChecks = fetchPRChecks(
           repo.path,
@@ -272,13 +280,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
                 : 30_000
             prevChecksRef.current = signature
           },
-          (err) => {
-            if (!isCurrentRequest() || !isCurrentAsyncResult(prRequestKey)) {
-              return
-            }
-            console.warn('Failed to fetch PR checks:', err)
-            setChecks([])
-          }
+          (err) => warnDropped('PR checks', err, () => setChecks([]))
         )
         setChecksLoading(true)
         setCommentsLoading(true)
@@ -293,25 +295,16 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
               setComments(result)
             }
           },
-          (err) => {
-            if (!isCurrentRequest() || !isCurrentAsyncResult(prRequestKey)) {
-              return
-            }
-            console.warn('Failed to fetch PR comments:', err)
-            setComments([])
-          }
+          (err) => warnDropped('PR comments', err, () => setComments([]))
         )
+        const commitIfCurrent = (setter: () => void) => {
+          if (isCurrentRequest() && isCurrentAsyncResult(prRequestKey)) {
+            setter()
+          }
+        }
         await Promise.all([
-          refreshedChecks.finally(() => {
-            if (isCurrentRequest() && isCurrentAsyncResult(prRequestKey)) {
-              setChecksLoading(false)
-            }
-          }),
-          refreshedComments.finally(() => {
-            if (isCurrentRequest() && isCurrentAsyncResult(prRequestKey)) {
-              setCommentsLoading(false)
-            }
-          })
+          refreshedChecks.finally(() => commitIfCurrent(() => setChecksLoading(false))),
+          refreshedComments.finally(() => commitIfCurrent(() => setCommentsLoading(false)))
         ])
       } else if (isCurrentRequest()) {
         setChecks([])
@@ -327,15 +320,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     } finally {
       recordChecksPanelPRRefreshBreadcrumb({
         event: 'done',
-        provider: refreshProvider,
-        repoId: repo.id,
-        worktreeId: activeWorktreeId,
-        branch,
-        prCacheKey,
-        prNumber: activeGitLabReview?.number ?? prNumber,
-        prState: activeGitLabReview?.state ?? pr?.state,
-        prChecksStatus: pr?.checksStatus,
-        refreshState: prCacheKey ? useAppStore.getState().prRefreshStates[prCacheKey] : null,
+        ...breadcrumbBase(),
         outcome: refreshOutcome,
         durationMs: Date.now() - refreshStartedAt,
         currentRequest: isCurrentRequest()
@@ -358,6 +343,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     activeWorktreeId,
     activeWorktreePath,
     activeWorktreePushTarget,
+    activeBitbucketReview,
     activeGitLabReview,
     prNumber,
     pr?.checksStatus,

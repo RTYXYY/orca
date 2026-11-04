@@ -30,6 +30,11 @@ export function selectChecksPanelReview({
   if (gitLabHostedReview) {
     return gitLabHostedReview
   }
+  // Bitbucket Data Center reviews render from the hosted-review cache like GitLab MRs.
+  const bitbucketHostedReview = hostedReview?.provider === 'bitbucket' ? hostedReview : null
+  if (bitbucketHostedReview) {
+    return bitbucketHostedReview
+  }
   const hasNonGitHubLinkedReview =
     linkedGitLabMR !== null ||
     linkedBitbucketPR !== null ||

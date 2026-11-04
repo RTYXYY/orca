@@ -15,6 +15,7 @@ import { presentGitHubPRMergeState } from '@/components/github-pr-merge-state'
 import type { PRInfo } from '../../../../../../shared/github/pull-request-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { Worktree } from '../../../../../../shared/worktree/types'
+import { BitbucketReviewActions } from '../../BitbucketReviewActions'
 import { resolveGitHubPRMergeMethods } from '../../../../../../shared/github/pull-request-merge-methods'
 import { getPullRequestMergeMethodLabel } from '@/components/github/pull-request-confirmation-copy'
 import {
@@ -24,7 +25,7 @@ import {
 import { runWorktreeDelete } from '../../../sidebar/workspace-actions/deletion/delete-worktree-flow'
 import { getDeleteStateForWorktreeHost } from '../../../sidebar/workspace-actions/deletion/worktree-delete-state-host-match'
 import { presentGitLabMRMergeState } from './gitlab-mr-merge-state'
-import { presentBitbucketPRMergeState } from './bitbucket-pr-merge-state'
+import { presentBitbucketPRMergeState } from '../../bitbucket-pr-merge-state'
 import {
   ClosedReviewActions,
   DraftReviewActions,
@@ -339,6 +340,15 @@ export default function HostedReviewActions({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          {isBitbucket && (
+            <BitbucketReviewActions
+              repo={repo}
+              prNumber={review.number}
+              reviewDecision={review.reviewDecision ?? null}
+              disabled={menuDisabled}
+              onRefreshReview={onRefreshReview}
+            />
+          )}
         </TooltipProvider>
         <HostedReviewActionError message={actionError} />
       </div>

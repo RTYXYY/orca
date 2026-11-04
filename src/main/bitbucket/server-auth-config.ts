@@ -75,5 +75,8 @@ export function resolveBitbucketServerAuthConfig(): BitbucketServerAuthConfig {
 }
 
 export function serverAuthHeaders(config: BitbucketServerAuthConfig): Record<string, string> {
-  return config.accessToken ? { Authorization: `Bearer ${config.accessToken}` } : {}
+  // X-Atlassian-Token + a non-browser UA are required for token-authenticated writes;
+  // Electron's Chrome UA otherwise trips Atlassian's XSRF check (same as the Jira client).
+  const base: Record<string, string> = { 'X-Atlassian-Token': 'no-check', 'User-Agent': 'Orca' }
+  return config.accessToken ? { ...base, Authorization: `Bearer ${config.accessToken}` } : base
 }

@@ -63,7 +63,36 @@ describe('Bitbucket Server mappers', () => {
     [[], null],
     [undefined, null]
   ] as const)('derives review decision from %o', (reviewers, expected) => {
-    expect(deriveBitbucketServerReviewDecision(reviewers)).toBe(expected)
+    expect(deriveBitbucketServerReviewDecision({ reviewers })).toBe(expected)
+  })
+
+  it('merges reviewers and participants statuses (real DC behavior)', () => {
+    // After PUT: reviewers[] carries the status, participants[] is empty.
+    expect(
+      deriveBitbucketServerReviewDecision({
+        reviewers: [{ status: 'NEEDS_WORK' }],
+        participants: []
+      })
+    ).toBe('CHANGES_REQUESTED')
+    // After DELETE: reviewers[] is empty, participants[] carries UNAPPROVED.
+    expect(
+      deriveBitbucketServerReviewDecision({
+        reviewers: [],
+        participants: [{ status: 'UNAPPROVED' }]
+      })
+    ).toBe('REVIEW_REQUIRED')
+    expect(
+      deriveBitbucketServerReviewDecision({
+        reviewers: [],
+        participants: [{ status: 'APPROVED' }]
+      })
+    ).toBe('APPROVED')
+  })
+
+  it('falls back to reviewers when participants is absent', () => {
+    expect(deriveBitbucketServerReviewDecision({ reviewers: [{ status: 'APPROVED' }] })).toBe(
+      'APPROVED'
+    )
   })
 
   it('maps a pull request with status, mergeable and review decision', () => {

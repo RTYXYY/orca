@@ -26,6 +26,8 @@ export type RawBitbucketServerPullRequest = {
   fromRef?: RawBitbucketServerRef
   toRef?: RawBitbucketServerRef
   reviewers?: readonly RawBitbucketServerReviewer[]
+  /** Detail responses carry per-user review status here, not on reviewers[]. */
+  participants?: readonly RawBitbucketServerReviewer[]
   links?: { self?: readonly { href?: string }[] }
 }
 
@@ -79,12 +81,14 @@ export function deriveBitbucketServerMergeable(
 }
 
 export function deriveBitbucketServerReviewDecision(
-  reviewers: readonly RawBitbucketServerReviewer[] | undefined
+  raw: Pick<RawBitbucketServerPullRequest, 'reviewers' | 'participants'>
 ): PRReviewDecision | null {
-  if (!reviewers || reviewers.length === 0) {
+  // Why: DC reports per-user status on reviewers[] after PUT but moves entries to participants[] after DELETE; merge both.
+  const all = [...(raw.reviewers ?? []), ...(raw.participants ?? [])]
+  if (all.length === 0) {
     return null
   }
-  const statuses = reviewers.map((reviewer) => stringOf(reviewer.status)?.toUpperCase())
+  const statuses = all.map((reviewer) => stringOf(reviewer.status)?.toUpperCase())
   if (statuses.includes('NEEDS_WORK')) {
     return 'CHANGES_REQUESTED'
   }
@@ -114,7 +118,7 @@ export function mapBitbucketServerPullRequest(
     status,
     updatedAt: typeof raw.updatedDate === 'number' ? new Date(raw.updatedDate).toISOString() : '',
     mergeable,
-    reviewDecision: deriveBitbucketServerReviewDecision(raw.reviewers),
+    reviewDecision: deriveBitbucketServerReviewDecision(raw),
     ...(headSha ? { headSha } : {})
   }
 }

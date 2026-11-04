@@ -13,7 +13,7 @@ import type { ChecksPanelComposerState } from './use-checks-panel-composer-state
 
 type ChecksPanelReviewDataInput = Pick<
   ChecksPanelContextState,
-  'activeGitLabReview' | 'pr' | 'prCacheKey' | 'prNumber'
+  'activeBitbucketReview' | 'activeGitLabReview' | 'pr' | 'prCacheKey' | 'prNumber'
 > &
   Pick<
     ChecksPanelControllerState,
@@ -33,6 +33,7 @@ type ChecksPanelReviewDataInput = Pick<
 export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
   const {
     activeGitLabReview,
+    activeBitbucketReview,
     branch,
     fetchPRCheckDetails,
     fetchPRComments,
@@ -155,7 +156,7 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
   const getGitLabProjectRef = useCallback(() => gitLabProjectRefRef.current, [gitLabProjectRefRef])
 
   useEffect(() => {
-    if (activeGitLabReview) {
+    if (activeGitLabReview || activeBitbucketReview) {
       return
     }
     if (!repo || !prNumber || !isPanelVisible) {
@@ -194,6 +195,7 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
     }
   }, [
     activeGitLabReview,
+    activeBitbucketReview,
     repo,
     prNumber,
     pr?.headSha,
@@ -208,7 +210,7 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
   ])
 
   useEffect(() => {
-    if (activeGitLabReview || !repo || !prNumber || !isPanelVisible) {
+    if (activeGitLabReview || activeBitbucketReview || !repo || !prNumber || !isPanelVisible) {
       return undefined
     }
     return window.api.gh.onWorkItemMutated((payload) => {
@@ -219,7 +221,7 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
       }
       void fetchComments({ force: true, userRefresh: true })
     })
-  }, [activeGitLabReview, fetchComments, isPanelVisible, prNumber, repo])
+  }, [activeGitLabReview, activeBitbucketReview, fetchComments, isPanelVisible, prNumber, repo])
   return { fetchComments, handleLoadCheckDetails, getGitLabProjectRef }
 }
 

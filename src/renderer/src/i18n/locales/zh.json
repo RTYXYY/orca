@@ -14267,6 +14267,28 @@
             "createInProgress": "正在创建 PR...",
             "workspaceHostUnresolved": "无法解析工作区主机。请刷新工作区后重试。",
             "branchDiscoveryFailed": "分支发现失败。"
+          },
+          "BitbucketReviewActions": {
+            "approve": "批准",
+            "approveTooltip": "以当前登录用户身份批准此拉取请求",
+            "approving": "更新中...",
+            "confirmRequestChanges": "确认标记需要修改",
+            "requestChanges": "需要修改",
+            "requestChangesTooltip": "将此拉取请求标记为合并前需要修改",
+            "requestingChanges": "正在标记需要修改...",
+            "clearNeedsWork": "清除需要修改",
+            "undoApprove": "撤销批准",
+            "undoApproveTooltip": "清除此拉取请求的批准状态"
+          },
+          "BitbucketPRTasks": {
+            "title": "任务",
+            "openCount_one": "{{count}} 个未完成",
+            "openCount_other": "{{count}} 个未完成",
+            "resolveTask": "标记任务完成",
+            "reopenTask": "重新打开任务",
+            "empty": "此拉取请求没有任务",
+            "addPlaceholder": "添加任务…",
+            "addTask": "添加任务"
           }
         }
       },

@@ -16,11 +16,24 @@ export const BitbucketPRComments = z.object({
   prNumber: z.number().int().positive()
 })
 
+export const BitbucketPRComment = z.object({
+  repo: requiredString('Missing repo selector'),
+  prNumber: z.number().int().positive(),
+  body: requiredString('Missing comment body')
+})
+
 export const BitbucketPRCommentReply = z.object({
   repo: requiredString('Missing repo selector'),
   prNumber: z.number().int().positive(),
   parentCommentId: z.number().int().positive(),
   body: requiredString('Missing comment body')
+})
+
+export const BitbucketPRCommentThreadResolve = z.object({
+  repo: requiredString('Missing repo selector'),
+  prNumber: z.number().int().positive(),
+  threadRootCommentId: z.number().int().positive(),
+  resolved: z.boolean()
 })
 
 export const BitbucketPRLineComment = z.object({
@@ -33,4 +46,28 @@ export const BitbucketPRLineComment = z.object({
   lineType: z.enum(['ADDED', 'CONTEXT', 'REMOVED']).optional(),
   fromHash: z.string().optional(),
   toHash: z.string().optional()
+})
+
+export const BitbucketPRReviewStatus = z.object({
+  repo: requiredString('Missing repo selector'),
+  prNumber: z.number().int().positive(),
+  status: z.enum(['APPROVED', 'NEEDS_WORK', 'UNAPPROVED'])
+})
+
+export const BitbucketPRTasks = z.object({
+  repo: requiredString('Missing repo selector'),
+  prNumber: z.number().int().positive()
+})
+
+export const BitbucketAddPRTask = z.object({
+  repo: requiredString('Missing repo selector'),
+  prNumber: z.number().int().positive(),
+  text: requiredString('Missing task text')
+})
+
+export const BitbucketSetPRTaskState = z.object({
+  repo: requiredString('Missing repo selector'),
+  prNumber: z.number().int().positive(),
+  taskId: z.number().int().positive(),
+  state: z.enum(['OPEN', 'RESOLVED'])
 })

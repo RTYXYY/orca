@@ -38,6 +38,7 @@ export type ChecksPanelManualRefreshInput = Pick<
 > &
   Pick<
     ChecksPanelContextState,
+    | 'activeBitbucketReview'
     | 'activeGitLabReview'
     | 'activeReview'
     | 'fallbackGitHubPRNumber'
@@ -55,5 +56,5 @@ export type ChecksPanelManualRefreshInput = Pick<
     | 'prNumber'
   > &
   Pick<ChecksPanelReviewState, 'hostedReviewCreateProvider'> &
-  Pick<ChecksPanelPollingState, 'fetchGitLabDetails'> &
+  Pick<ChecksPanelPollingState, 'fetchGitLabDetails' | 'fetchBitbucketDetails'> &
   Pick<ChecksPanelComposerState, 'isCurrentAsyncResult'>

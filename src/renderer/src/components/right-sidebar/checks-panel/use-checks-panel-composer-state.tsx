@@ -18,7 +18,12 @@ import {
 
 type ChecksPanelComposerStateInput = Pick<
   ChecksPanelContextState,
-  'activeGitLabReview' | 'hostedReviewCacheKey' | 'pr' | 'prCacheKey' | 'prNumber'
+  | 'activeBitbucketReview'
+  | 'activeGitLabReview'
+  | 'hostedReviewCacheKey'
+  | 'pr'
+  | 'prCacheKey'
+  | 'prNumber'
 > &
   Pick<
     ChecksPanelReviewState,
@@ -60,6 +65,7 @@ type ChecksPanelComposerStateInput = Pick<
 
 export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput) {
   const {
+    activeBitbucketReview,
     activeGitLabReview,
     activePullRequestGenerationKey,
     activePullRequestGenerationRecord,
@@ -231,7 +237,15 @@ export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput
             activeGitLabReview.number,
             activeGitLabReview.headSha
           )
-        : checksPanelAsyncResultKey(prCacheKey, branch, prNumber, pr?.prRepo, pr?.headSha)
+        : activeBitbucketReview
+          ? checksPanelHostedReviewAsyncResultKey(
+              hostedReviewCacheKey,
+              branch,
+              activeBitbucketReview.provider,
+              activeBitbucketReview.number,
+              activeBitbucketReview.headSha
+            )
+          : checksPanelAsyncResultKey(prCacheKey, branch, prNumber, pr?.prRepo, pr?.headSha)
       : ''
   asyncResultKeyRef.current = stateRequestKey
 

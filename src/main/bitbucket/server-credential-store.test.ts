@@ -52,7 +52,9 @@ describe('Bitbucket Server credential store', () => {
       accessToken: 't0k'
     })
     expect(config.serverAuthHeaders({ baseUrl: null, accessToken: 't0k' })).toEqual({
-      Authorization: 'Bearer t0k'
+      Authorization: 'Bearer t0k',
+      'X-Atlassian-Token': 'no-check',
+      'User-Agent': 'Orca'
     })
   })
 

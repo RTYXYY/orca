@@ -58,7 +58,9 @@ type RepoBackedTaskSourceSummaryArgs = {
 
 export function getTaskSourceContextSummary(
   args:
-    | ({ provider: Extract<TaskProvider, 'github' | 'gitlab'> } & RepoBackedTaskSourceSummaryArgs)
+    | ({
+        provider: Extract<TaskProvider, 'github' | 'gitlab' | 'bitbucket'>
+      } & RepoBackedTaskSourceSummaryArgs)
     | {
         provider: Extract<TaskProvider, 'linear' | 'jira'>
         providerLabel: string

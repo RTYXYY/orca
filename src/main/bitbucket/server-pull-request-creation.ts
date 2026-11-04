@@ -1,9 +1,12 @@
 import type { ExecutionHostId } from '../../shared/execution-host'
-import type { CreateHostedReviewInput, CreateHostedReviewResult } from '../../shared/hosted-review'
+import type {
+  CreateHostedReviewInput,
+  CreateHostedReviewResult
+} from '../../shared/source-control/hosted-review/hosted-review-contracts'
 import {
   normalizeHostedReviewBaseRef,
   normalizeHostedReviewHeadRef
-} from '../../shared/hosted-review-refs'
+} from '../../shared/source-control/hosted-review/hosted-review-refs'
 import {
   HostedReviewApiRequestError,
   requestHostedReviewJson

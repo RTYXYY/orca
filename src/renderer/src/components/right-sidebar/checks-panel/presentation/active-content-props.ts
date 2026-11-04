@@ -47,6 +47,7 @@ export type ChecksPanelActiveContentModel = Pick<
     ChecksPanelContextState,
     | 'activeConflictReview'
     | 'activeGitLabReview'
+    | 'activeBitbucketReview'
     | 'activeReview'
     | 'linkedGitLabMR'
     | 'pr'

@@ -2,8 +2,8 @@ import { summarizeProviderChecks } from '../../shared/source-control/checks/prov
 import type {
   CheckStatus,
   PRMergeableState,
-  ProviderCheckSummary,
-  PRReviewDecision
+  PRReviewDecision,
+  ProviderCheckSummary
 } from '../../shared/github/pull-request-types'
 
 export type RawBitbucketPullRequest = {

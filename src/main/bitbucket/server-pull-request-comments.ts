@@ -34,17 +34,13 @@ export type RawBitbucketServerComment = {
   updatedDate?: number
   version?: number
   resolved?: boolean
+  /** DC 8+ reports resolution via state transitions instead of a resolved boolean. */
+  state?: string
   severity?: string
   author?: { name?: string; displayName?: string; emailAddress?: string; avatarUrl?: string }
   parent?: { id?: number } | number
   anchor?: RawBitbucketServerCommentAnchor
   links?: { self?: readonly { href?: string }[] }
-}
-
-export type RawBitbucketServerCommentPage = {
-  values?: RawBitbucketServerComment[]
-  isLastPage?: boolean
-  nextPageStart?: number | null
 }
 
 export type BitbucketPRCommentResult =
@@ -99,7 +95,8 @@ export function mapBitbucketServerComment(
         }
       : {}),
     threadId: String(threadRootId),
-    ...(raw.resolved === true ? { isResolved: true } : {})
+    // Why: undefined would classify an unresolved thread as a plain conversation and hide it from triage.
+    isResolved: raw.resolved === true || stringOf(raw.state)?.toUpperCase() === 'RESOLVED'
   }
 }
 
@@ -137,26 +134,28 @@ export function mapBitbucketServerComments(
   return comments
 }
 
-async function fetchAllCommentPages(
+async function fetchPagedValues<T>(
   config: ReturnType<typeof resolveBitbucketServerAuthConfig>,
-  repoApiPath: string,
-  prNumber: number
-): Promise<RawBitbucketServerComment[]> {
-  const values: RawBitbucketServerComment[] = []
+  urlForPage: (start: number) => URL,
+  timeoutMs: number
+): Promise<T[]> {
+  const values: T[] = []
   let start = 0
   for (let page = 0; page < MAX_COMMENT_PAGES; page += 1) {
-    const url = new URL(
-      `${config.baseUrl}${repoApiPath}/pull-requests/${encodeURIComponent(String(prNumber))}/comments`
-    )
+    const url = urlForPage(start)
     url.searchParams.set('start', String(start))
     url.searchParams.set('limit', String(COMMENTS_PAGE_LIMIT))
-    // SAFETY: DC returns a JSON object matching RawBitbucketServerCommentPage; fields are validated in the mappers.
-    const body = await requestHostedReviewJson<RawBitbucketServerCommentPage>(
+    // SAFETY: DC returns a paged JSON object; callers validate item fields.
+    const body = await requestHostedReviewJson<{
+      values?: T[]
+      isLastPage?: boolean
+      nextPageStart?: number | null
+    }>(
       url,
       {
         headers: { Accept: 'application/json', ...serverAuthHeaders(config) }
       },
-      COMMENTS_TIMEOUT_MS
+      timeoutMs
     )
     values.push(...(body.values ?? []))
     if (body.isLastPage !== false || body.nextPageStart == null) {
@@ -165,6 +164,79 @@ async function fetchAllCommentPages(
     start = body.nextPageStart
   }
   return values
+}
+
+type RawChange = { path?: unknown }
+
+function changePath(change: RawChange): string | null {
+  const path = change.path
+  if (typeof path === 'string' && path) {
+    return path
+  }
+  if (path && typeof path === 'object' && typeof (path as { name?: unknown }).name === 'string') {
+    return (path as { name: string }).name
+  }
+  return null
+}
+
+type RawActivityEntry = { action?: string; comment?: RawBitbucketServerComment }
+
+async function fetchAllCommentPages(
+  config: ReturnType<typeof resolveBitbucketServerAuthConfig>,
+  repoApiPath: string,
+  prNumber: number
+): Promise<RawBitbucketServerComment[]> {
+  const prPath = `${repoApiPath}/pull-requests/${encodeURIComponent(String(prNumber))}`
+  // DC 8+ requires `path` on the comments endpoint; collect changed files first.
+  const changes = await fetchPagedValues<RawChange>(
+    config,
+    (start) => new URL(`${config.baseUrl}${prPath}/changes?start=${start}`),
+    COMMENTS_TIMEOUT_MS
+  )
+  const paths = [...new Set(changes.map(changePath).filter((p): p is string => p !== null))]
+  const raws: RawBitbucketServerComment[] = []
+  for (const path of paths) {
+    const fileComments = await fetchPagedValues<RawBitbucketServerComment>(
+      config,
+      () => new URL(`${config.baseUrl}${prPath}/comments?path=${encodeURIComponent(path)}`),
+      COMMENTS_TIMEOUT_MS
+    )
+    raws.push(...fileComments)
+  }
+  // PR-level (unanchored) comments only appear in the activity feed; some DC versions expose /activities.
+  const activity = await fetchPagedValues<RawActivityEntry>(
+    config,
+    (start) => new URL(`${config.baseUrl}${prPath}/activities?start=${start}`),
+    COMMENTS_TIMEOUT_MS
+  ).catch(async () =>
+    fetchPagedValues<RawActivityEntry>(
+      config,
+      (start) => new URL(`${config.baseUrl}${prPath}/activity?start=${start}`),
+      COMMENTS_TIMEOUT_MS
+    )
+  )
+  const seenIds = new Set(
+    raws.map((raw) => numberOrUndefined(raw.id)).filter((id) => id !== undefined)
+  )
+  for (const entry of activity) {
+    const comment = entry.comment
+    // Why: DC versions report COMMENT or COMMENTED for the same feed entry.
+    if (
+      (entry.action === 'COMMENT' || entry.action === 'COMMENTED') &&
+      comment &&
+      comment.anchor === undefined
+    ) {
+      const id = numberOrUndefined(comment.id)
+      if (id !== undefined && seenIds.has(id)) {
+        continue
+      }
+      if (id !== undefined) {
+        seenIds.add(id)
+      }
+      raws.push(comment)
+    }
+  }
+  return raws
 }
 
 export async function getBitbucketServerPRComments(

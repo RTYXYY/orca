@@ -41,6 +41,8 @@ export default function ChecksPanel(): React.JSX.Element {
     resolutionModel,
     useChecksPanelCommentMutations(resolutionModel)
   )
+  // Late-bind so Bitbucket comment mutations can refetch PR details without a hook-order cycle.
+  mutationModel.fetchBitbucketDetailsRef.current = pollingModel.fetchBitbucketDetails
   const acknowledgementModel = Object.assign(
     mutationModel,
     useChecksPanelAiAcknowledgement(mutationModel)

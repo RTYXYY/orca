@@ -98,11 +98,17 @@ import {
   AutomationUpdate
 } from './automation-params'
 import {
+  BitbucketAddPRTask,
   BitbucketMergePr,
+  BitbucketPRComment,
   BitbucketPRCommentReply,
+  BitbucketPRCommentThreadResolve,
   BitbucketPRComments,
   BitbucketPRLineComment,
-  BitbucketPRList
+  BitbucketPRList,
+  BitbucketPRReviewStatus,
+  BitbucketPRTasks,
+  BitbucketSetPRTaskState
 } from './bitbucket-params'
 import { CertificateProceed } from './browser-core-params'
 import { MouseClick } from './browser-extras-params'
@@ -865,11 +871,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'automation.runs': AutomationRuns,
   'automation.show': AutomationId,
   'automation.update': AutomationUpdate,
+  'bitbucket.addPRComment': BitbucketPRComment,
   'bitbucket.addPRCommentReply': BitbucketPRCommentReply,
   'bitbucket.addPRLineComment': BitbucketPRLineComment,
+  'bitbucket.addPRTask': BitbucketAddPRTask,
   'bitbucket.listPRs': BitbucketPRList,
   'bitbucket.mergePR': BitbucketMergePr,
   'bitbucket.prComments': BitbucketPRComments,
+  'bitbucket.prTasks': BitbucketPRTasks,
+  'bitbucket.resolvePRCommentThread': BitbucketPRCommentThreadResolve,
+  'bitbucket.setPRReviewStatus': BitbucketPRReviewStatus,
+  'bitbucket.setPRTaskState': BitbucketSetPRTaskState,
   'browser.back': ExpectUrlBrowserTarget,
   'browser.capture.start': BrowserTarget,
   'browser.capture.stop': BrowserTarget,

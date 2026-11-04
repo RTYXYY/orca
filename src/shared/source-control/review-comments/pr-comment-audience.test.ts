@@ -34,6 +34,19 @@ describe('pr comment audience filtering', () => {
     expect(isBotPRComment(comment({ author: 'human-botany' }))).toBe(false)
   })
 
+  it('classifies body bot markers as bots', () => {
+    expect(
+      isBotPRComment(comment({ author: 'alice', body: 'looks good\n<!-- bot-comment -->' }))
+    ).toBe(true)
+    expect(isBotPRComment(comment({ author: 'bob', body: '<!-- BOT-COMMENT -->\nsummary' }))).toBe(
+      true
+    )
+    expect(isBotPRComment(comment({ author: 'octocat', body: 'no markers here' }))).toBe(false)
+    expect(
+      isBotPRComment(comment({ author: 'octocat', body: 'mentioning bot-comment in prose' }))
+    ).toBe(false)
+  })
+
   it('counts and filters human and bot comments', () => {
     const comments = [
       comment({ id: 1, author: 'yasinkavakli' }),

@@ -20,6 +20,7 @@ import {
   fetchGitLabMRDetailsForChecks,
   gitLabMRCommentsToPRComments
 } from '../gitlab-review-client'
+import { bitbucketReviewToPRChecks, fetchBitbucketReviewComments } from '../bitbucket-review-client'
 import { checksPanelLoadErrorMessage } from '../checks-panel-forge-owner'
 import { forgeOwnerHostIdForWorkspace } from '@/runtime/forge-credential-target'
 import { isWslDistroNotRunningRefusal } from '../../../../../../shared/wsl-distro-not-running-refusal'
@@ -27,7 +28,12 @@ import { translate } from '@/i18n/i18n'
 
 export type ChecksPanelPollingInput = Pick<
   ChecksPanelContextState,
-  'activeGitLabReview' | 'hostedReviewCacheKey' | 'pr' | 'prCacheKey' | 'prNumber'
+  | 'activeBitbucketReview'
+  | 'activeGitLabReview'
+  | 'hostedReviewCacheKey'
+  | 'pr'
+  | 'prCacheKey'
+  | 'prNumber'
 > &
   Pick<
     ChecksPanelControllerState,
@@ -56,7 +62,16 @@ export function useChecksPanelPolling(model: ChecksPanelPollingInput) {
   useEffect(() => {
     modelRef.current = model
   })
-  const { activeGitLabReview, pr, prNumber, prCacheKey, branch, repo, hostedReviewCacheKey } = model
+  const {
+    activeGitLabReview,
+    activeBitbucketReview,
+    pr,
+    prNumber,
+    prCacheKey,
+    branch,
+    repo,
+    hostedReviewCacheKey
+  } = model
   const requestIdentity = JSON.stringify([
     repo?.id,
     repo?.path,
@@ -64,13 +79,13 @@ export function useChecksPanelPolling(model: ChecksPanelPollingInput) {
     repo?.connectionId,
     model.activeWorktree?.hostId,
     branch,
-    activeGitLabReview ? 'gitlab' : 'github',
-    activeGitLabReview?.number ?? prNumber,
-    activeGitLabReview?.headSha ?? pr?.headSha,
+    activeGitLabReview ? 'gitlab' : activeBitbucketReview ? 'bitbucket' : 'github',
+    activeGitLabReview?.number ?? activeBitbucketReview?.number ?? prNumber,
+    activeGitLabReview?.headSha ?? activeBitbucketReview?.headSha ?? pr?.headSha,
     pr?.prRepo?.owner,
     pr?.prRepo?.repo,
     pr?.prRepo?.host,
-    activeGitLabReview ? hostedReviewCacheKey : prCacheKey
+    activeGitLabReview || activeBitbucketReview ? hostedReviewCacheKey : prCacheKey
   ])
   const gitLabDetailsLoadingGenerationRef = useRef(0)
   const fetchChecks = useCallback(
@@ -281,16 +296,96 @@ export function useChecksPanelPolling(model: ChecksPanelPollingInput) {
     []
   )
 
+  const bitbucketDetailsLoadingGenerationRef = useRef(0)
+  const fetchBitbucketDetails = useCallback(
+    async ({
+      prNumberOverride,
+      isRequestCurrent,
+      commitAsCurrent = false
+    }: {
+      prNumberOverride?: number | null
+      isRequestCurrent?: () => boolean
+      commitAsCurrent?: boolean
+    } = {}) => {
+      const {
+        activeBitbucketReview,
+        repo,
+        branch,
+        hostedReviewCacheKey,
+        asyncResultKeyRef,
+        isCurrentAsyncResult,
+        setChecks,
+        setChecksLoading,
+        setComments,
+        setCommentsError,
+        setCommentsLoading
+      } = modelRef.current
+      const targetPRNumber = prNumberOverride ?? activeBitbucketReview?.number ?? null
+      if (!repo || !targetPRNumber) {
+        return
+      }
+      const requestKey = checksPanelHostedReviewAsyncResultKey(
+        hostedReviewCacheKey,
+        branch,
+        'bitbucket',
+        targetPRNumber,
+        activeBitbucketReview?.headSha ?? null
+      )
+      if (isRequestCurrent?.() === false) {
+        return
+      }
+      if (commitAsCurrent) {
+        asyncResultKeyRef.current = requestKey
+      }
+      const loadingGeneration = bitbucketDetailsLoadingGenerationRef.current + 1
+      bitbucketDetailsLoadingGenerationRef.current = loadingGeneration
+      setChecksLoading(true)
+      setCommentsLoading(true)
+      try {
+        const result = await fetchBitbucketReviewComments({
+          repo,
+          prNumber: targetPRNumber
+        })
+        if (isRequestCurrent?.() === false || !isCurrentAsyncResult(requestKey)) {
+          return
+        }
+        if (!result.ok) {
+          throw new Error(result.error)
+        }
+        setComments(result.comments)
+        setChecks(activeBitbucketReview ? bitbucketReviewToPRChecks(activeBitbucketReview) : [])
+      } catch (err) {
+        if (isRequestCurrent?.() === false || !isCurrentAsyncResult(requestKey)) {
+          return
+        }
+        console.warn('Failed to fetch Bitbucket PR details:', err)
+        const message =
+          err instanceof Error ? err.message : 'Failed to load Bitbucket pull request details.'
+        setCommentsError(message)
+      } finally {
+        if (
+          bitbucketDetailsLoadingGenerationRef.current === loadingGeneration &&
+          isCurrentAsyncResult(requestKey)
+        ) {
+          setChecksLoading(false)
+          setCommentsLoading(false)
+        }
+      }
+    },
+    []
+  )
+
   useChecksDetailTimer({
     model,
     modelRef,
     policyRef,
     requestIdentity,
     fetchChecks,
-    fetchGitLabDetails
+    fetchGitLabDetails,
+    fetchBitbucketDetails
   })
 
-  return { fetchChecks, fetchGitLabDetails }
+  return { fetchChecks, fetchGitLabDetails, fetchBitbucketDetails }
 }
 
 export type ChecksPanelPollingState = ReturnType<typeof useChecksPanelPolling>

@@ -8,7 +8,7 @@ import { projectHostSetupProjectionFromRepos } from '../../../shared/project-hos
 import { getRepoExecutionHostId } from '../../../shared/execution-host'
 export function getTaskPageRepoSourceContext(
   repo: Repo | null | undefined,
-  provider: 'github' | 'gitlab',
+  provider: 'github' | 'gitlab' | 'bitbucket',
   gitlabProjectRef?: GitLabProjectRef | null
 ): TaskSourceContext | null {
   if (!repo) {

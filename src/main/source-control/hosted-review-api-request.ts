@@ -31,7 +31,12 @@ export async function requestHostedReviewJson<T>(
         status: response.status
       })
     }
-    return (await response.json()) as T
+    // Why: DC's DELETE participation answers 204 with no body; json() on empty text throws.
+    if (response.status === 204) {
+      return {} as T
+    }
+    const text = await readResponseText(response)
+    return (text.trim() ? JSON.parse(text) : {}) as T
   } catch (error) {
     if (error instanceof HostedReviewApiRequestError) {
       throw error

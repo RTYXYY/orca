@@ -22,6 +22,8 @@ export type ChecksListProps = {
   pipelineCheck?: PRCheckDetail | null
   /** Set when the last read failed; replaces the empty-list copy. */
   checksError?: string | null
+  /** Overrides the generic empty-list copy for providers without per-check lists (e.g. Bitbucket DC). */
+  checksEmptyMessage?: string
   checksLoading: boolean
   checkDetailsContextKey: string
   onLoadCheckDetails?: (check: PRCheckDetail) => Promise<PRCheckRunDetails | null>

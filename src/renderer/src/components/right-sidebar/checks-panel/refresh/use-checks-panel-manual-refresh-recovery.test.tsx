@@ -19,6 +19,7 @@ function baseInput(): RefreshInput {
   return {
     activeConnectionId: null,
     activeGitLabReview: null,
+    activeBitbucketReview: null,
     activeReview: null,
     activeWorktreeId: null,
     activeWorktreePath: null,
@@ -28,6 +29,7 @@ function baseInput(): RefreshInput {
     expireGitHubPRRefreshState: vi.fn(),
     fallbackGitHubPRNumber: null,
     fetchGitLabDetails: vi.fn(),
+    fetchBitbucketDetails: vi.fn(),
     fetchHostedReviewForBranch: vi.fn(async () => null),
     fetchPRChecks: vi.fn(async () => []),
     fetchPRComments: vi.fn(async () => []),

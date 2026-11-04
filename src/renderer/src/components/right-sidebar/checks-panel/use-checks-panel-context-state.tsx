@@ -8,6 +8,7 @@ import { isStaleMergedGitHubReviewForHead } from '@/store/slices/hosted-review-c
 import { selectReviewCacheEntry } from '../source-control/review/review-cache-entry-selection'
 import { selectChecksPanelReview, type ChecksPanelReview } from './checks-panel-review'
 import { isGitLabChecksPanelReview } from './gitlab-review-client'
+import { isBitbucketChecksPanelReview } from './bitbucket-review-client'
 import { clearPendingPRCommentAiAck } from './comments/pr-comments-ai-launch-ack'
 import {
   buildGitHubPRRefreshStateClearToken,
@@ -229,6 +230,7 @@ export function useChecksPanelContextState(model: ChecksPanelContextStateInput) 
     linkedGiteaPR
   })
   const activeGitLabReview = isGitLabChecksPanelReview(activeReview) ? activeReview : null
+  const activeBitbucketReview = isBitbucketChecksPanelReview(activeReview) ? activeReview : null
   const isGitLabReviewContext = Boolean(activeGitLabReview || linkedGitLabMR !== null)
   const activeConflictReview = activeReview?.mergeable === 'CONFLICTING' ? activeReview : null
   const prRefreshState = useAppStore((s) =>
@@ -340,6 +342,7 @@ export function useChecksPanelContextState(model: ChecksPanelContextStateInput) 
     linkedGiteaPR,
     activeReview,
     activeGitLabReview,
+    activeBitbucketReview,
     isGitLabReviewContext,
     activeConflictReview,
     prRefreshState,

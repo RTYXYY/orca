@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { forgeOwnerHostIdForWorkspace } from '@/runtime/forge-credential-target'
 import { toast } from 'sonner'
 import { mergePRCommentIntoList } from '@/store/github/pr-comment-cache'
@@ -10,6 +10,10 @@ import {
   canPostPRReviewThreadReply,
   resolvePRReviewReplyThreadId
 } from './pr-comments-ai-launch-ack'
+import {
+  addBitbucketReviewComment,
+  replyToBitbucketReviewComment
+} from '../bitbucket-review-client'
 import type { ChecksPanelControllerState } from '../use-checks-panel-controller-state'
 import type { ChecksPanelCommentResolutionState } from './use-checks-panel-comment-resolution'
 import type { ChecksPanelComposerState } from '../use-checks-panel-composer-state'
@@ -38,13 +42,18 @@ type ChecksPanelCommentMutationsInput = Pick<
 > &
   Pick<ChecksPanelCommentResolutionState, 'commentsDisabledReason'> &
   Pick<ChecksPanelComposerState, 'isCurrentAsyncResult'> &
-  Pick<ChecksPanelContextState, 'pr' | 'prCacheKey' | 'prNumber'>
+  Pick<ChecksPanelContextState, 'activeBitbucketReview' | 'pr' | 'prCacheKey' | 'prNumber'>
 
 export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutationsInput) {
+  // Late-bound so comment mutations can refetch Bitbucket details without a polling-hook cycle.
+  const fetchBitbucketDetailsRef = useRef<
+    ((args: { prNumberOverride?: number | null }) => Promise<void>) | null
+  >(null)
   const {
     activeWorktree,
     addPRConversationComment,
     addPRReviewCommentReply,
+    activeBitbucketReview,
     branch,
     commentsDisabledReason,
     commentsRef,
@@ -59,6 +68,23 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
   } = model
   const handleAddPRComment = useCallback(
     async (body: string) => {
+      if (activeBitbucketReview) {
+        if (!repo) {
+          return { ok: false as const, error: commentsDisabledReason ?? 'Commenting unavailable.' }
+        }
+        const result = await addBitbucketReviewComment({
+          repo,
+          prNumber: activeBitbucketReview.number,
+          body
+        })
+        if (result.ok) {
+          // Reuse the polling fetch to merge the created comment with fresh server state.
+          await fetchBitbucketDetailsRef.current?.({
+            prNumberOverride: activeBitbucketReview.number
+          })
+        }
+        return result
+      }
       if (!repo || !prNumber || !pr?.prRepo) {
         return { ok: false as const, error: commentsDisabledReason ?? 'Commenting unavailable.' }
       }
@@ -95,6 +121,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
     [
       activeWorktree,
       addPRConversationComment,
+      activeBitbucketReview,
       branch,
       commentsDisabledReason,
       isCurrentAsyncResult,
@@ -228,6 +255,23 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
   const handleReplyToComment = useCallback(
     async (comment: PRComment, body: string, options: { notifyOnFailure?: boolean } = {}) => {
       const notifyOnFailure = options.notifyOnFailure !== false
+      if (activeBitbucketReview) {
+        if (!repo) {
+          return { ok: false as const, error: commentsDisabledReason ?? 'Commenting unavailable.' }
+        }
+        const result = await replyToBitbucketReviewComment({
+          repo,
+          prNumber: activeBitbucketReview.number,
+          parentCommentId: comment.id,
+          body
+        })
+        if (result.ok) {
+          setComments((prev) => mergePRCommentIntoList(prev, result.comment))
+        } else if (notifyOnFailure) {
+          toast.error(result.error)
+        }
+        return result.ok ? { ok: true as const } : { ok: false as const, error: result.error }
+      }
       if (!repo || !prNumber || !pr?.prRepo) {
         return { ok: false as const, error: commentsDisabledReason ?? 'Commenting unavailable.' }
       }
@@ -296,6 +340,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
       activeWorktree,
       addPRConversationComment,
       addPRReviewCommentReply,
+      activeBitbucketReview,
       branch,
       commentsDisabledReason,
       isCurrentAsyncResult,
@@ -308,6 +353,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
     ]
   )
   return {
+    fetchBitbucketDetailsRef,
     handleAddPRComment,
     handleEditComment,
     handleDeleteComment,

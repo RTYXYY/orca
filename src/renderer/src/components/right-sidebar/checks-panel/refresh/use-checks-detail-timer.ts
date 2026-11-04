@@ -10,7 +10,8 @@ export function useChecksDetailTimer({
   policyRef,
   requestIdentity,
   fetchChecks,
-  fetchGitLabDetails
+  fetchGitLabDetails,
+  fetchBitbucketDetails
 }: {
   model: ChecksPanelPollingInput
   modelRef: RefObject<ChecksPanelPollingInput>
@@ -18,9 +19,11 @@ export function useChecksDetailTimer({
   requestIdentity: string
   fetchChecks: ChecksPanelPollingState['fetchChecks']
   fetchGitLabDetails: ChecksPanelPollingState['fetchGitLabDetails']
+  fetchBitbucketDetails?: ChecksPanelPollingState['fetchBitbucketDetails']
 }): void {
   const {
     activeGitLabReview,
+    activeBitbucketReview,
     pr,
     prNumber,
     isPanelVisible,
@@ -32,6 +35,7 @@ export function useChecksDetailTimer({
   const refreshRef = useRef<(() => void) | null>(null)
   const forceNextFetchRef = useRef(false)
   const isGitLabReview = activeGitLabReview !== null
+  const isBitbucketReview = activeBitbucketReview !== null
   const lastIdentityRef = useRef<string | null>(null)
   const lastAttemptAtRef = useRef(-Infinity)
   const nextAttemptAtRef = useRef(-Infinity)
@@ -51,15 +55,19 @@ export function useChecksDetailTimer({
       setChecks([])
       setComments([])
     }
-    if (!isPanelVisible || (!isGitLabReview && !prNumber)) {
+    if (!isPanelVisible || (!isGitLabReview && !isBitbucketReview && !prNumber)) {
       wakeNextReadRef.current = true
       return
     }
     const policyDelay = (): number | null => {
       const current = modelRef.current
       return policyRef.current.delayMs(
-        current.activeGitLabReview?.state ?? current.pr?.state,
-        current.activeGitLabReview?.status ?? current.pr?.checksStatus,
+        current.activeGitLabReview?.state ??
+          current.activeBitbucketReview?.state ??
+          current.pr?.state,
+        current.activeGitLabReview?.status ??
+          current.activeBitbucketReview?.status ??
+          current.pr?.checksStatus,
         current.pollIntervalRef.current
       )
     }
@@ -91,7 +99,9 @@ export function useChecksDetailTimer({
         try {
           await (isGitLabReview
             ? fetchGitLabDetails(shown ? {} : { background: true })
-            : fetchChecks({ force, ...(shown ? { wakeWslDistro: true } : {}) }))
+            : isBitbucketReview && fetchBitbucketDetails
+              ? fetchBitbucketDetails({})
+              : fetchChecks({ force, ...(shown ? { wakeWslDistro: true } : {}) }))
         } finally {
           if (inFlightRef.current?.token === token) {
             inFlightRef.current = null
@@ -129,8 +139,10 @@ export function useChecksDetailTimer({
     policyRef,
     fetchChecks,
     fetchGitLabDetails,
+    fetchBitbucketDetails,
     isPanelVisible,
     isGitLabReview,
+    isBitbucketReview,
     prNumber,
     pollIntervalRef,
     prevChecksRef,
@@ -138,8 +150,9 @@ export function useChecksDetailTimer({
     setComments
   ])
 
-  const aggregatePending = (activeGitLabReview?.status ?? pr?.checksStatus) === 'pending'
-  const reviewState = activeGitLabReview?.state ?? pr?.state
+  const aggregatePending =
+    (activeGitLabReview?.status ?? activeBitbucketReview?.status ?? pr?.checksStatus) === 'pending'
+  const reviewState = activeGitLabReview?.state ?? activeBitbucketReview?.state ?? pr?.state
   const previousPendingRef = useRef(aggregatePending)
   useEffect(() => {
     if (previousPendingRef.current !== aggregatePending) {

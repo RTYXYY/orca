@@ -15,6 +15,7 @@ import { codeHostErrorText } from '@/lib/code-host-error-copy'
 
 type ChecksPanelEntryRefreshAndTitleActionsInput = Pick<
   ChecksPanelContextState,
+  | 'activeBitbucketReview'
   | 'activeGitLabReview'
   | 'activeReview'
   | 'clearTitleInputFocusTimer'
@@ -54,13 +55,14 @@ type ChecksPanelEntryRefreshAndTitleActionsInput = Pick<
     | 'titleInputRef'
   > &
   Pick<ChecksPanelReviewState, 'checksFetchedAt' | 'commentsFetchedAt' | 'prFetchedAt'> &
-  Pick<ChecksPanelPollingState, 'fetchChecks' | 'fetchGitLabDetails'> &
+  Pick<ChecksPanelPollingState, 'fetchChecks' | 'fetchGitLabDetails' | 'fetchBitbucketDetails'> &
   Pick<ChecksPanelReviewDataState, 'fetchComments'>
 
 export function useChecksPanelEntryRefreshAndTitleActions(
   model: ChecksPanelEntryRefreshAndTitleActionsInput
 ) {
   const {
+    activeBitbucketReview,
     activeGitLabReview,
     activeReview,
     activeWorktree,
@@ -74,6 +76,7 @@ export function useChecksPanelEntryRefreshAndTitleActions(
     fetchChecks,
     fetchComments,
     fetchGitLabDetails,
+    fetchBitbucketDetails,
     fetchHostedReviewForBranch,
     fetchPRForBranch,
     hostedReviewCacheKey,
@@ -108,7 +111,7 @@ export function useChecksPanelEntryRefreshAndTitleActions(
         return
       }
       // Tab entry is automatic: preserve rate-limit guards and force only panes already known stale.
-      if (isGitLabReviewContext) {
+      if (activeBitbucketReview || isGitLabReviewContext) {
         void fetchHostedReviewForBranch(repo.path, branch, {
           force: true,
           repoId: repo.id,
@@ -122,7 +125,9 @@ export function useChecksPanelEntryRefreshAndTitleActions(
           linkedGiteaPR
         })
         // Entering the tab is a user act: it may start a stopped WSL distro (E9).
-        if (activeGitLabReview) {
+        if (activeBitbucketReview) {
+          void fetchBitbucketDetails({})
+        } else if (activeGitLabReview) {
           void fetchGitLabDetails()
         }
         return
@@ -136,12 +141,14 @@ export function useChecksPanelEntryRefreshAndTitleActions(
       }
     },
     [
+      activeBitbucketReview,
       activeGitLabReview,
       activeWorktree?.head,
       activeWorktreeId,
       branch,
       enqueueGitHubPRRefresh,
       fallbackGitHubPRNumber,
+      fetchBitbucketDetails,
       fetchChecks,
       fetchComments,
       fetchGitLabDetails,
@@ -159,7 +166,9 @@ export function useChecksPanelEntryRefreshAndTitleActions(
   // Check freshness on tab entry to catch external changes before TTL expiry; see docs/refresh-on-checks-tab.md.
   const entryKey =
     isPanelVisible && repo && !isFolder && branch
-      ? `${activeWorktreeId ?? ''}::${activeGitLabReview ? hostedReviewCacheKey : prCacheKey}`
+      ? `${activeWorktreeId ?? ''}::${
+          activeGitLabReview || activeBitbucketReview ? hostedReviewCacheKey : prCacheKey
+        }`
       : ''
   const lastEntryKeyRef = useRef<string>('')
   useEffect(() => {
@@ -214,8 +223,9 @@ export function useChecksPanelEntryRefreshAndTitleActions(
     // Details read the panel's live model, so a write that settles after a repo/link switch must not reuse its MR number.
     const requestContextKey = panelContextKey
     const isRequestCurrent = (): boolean => panelContextKeyRef.current === requestContextKey
-    if (activeReview?.provider === 'gitlab') {
-      const refreshedReview = await refreshHostedReviewCard(fetchHostedReviewForBranch, {
+    const hostedProvider = activeReview?.provider
+    if (hostedProvider === 'bitbucket' || hostedProvider === 'gitlab') {
+      const refreshed = await refreshHostedReviewCard(fetchHostedReviewForBranch, {
         repoPath: repo.path,
         repoId: repo.id,
         repoOwnerExecutionHostId: getRepoExecutionHostId(repo),
@@ -228,16 +238,17 @@ export function useChecksPanelEntryRefreshAndTitleActions(
         linkedAzureDevOpsPR,
         linkedGiteaPR
       }).catch(() => null)
-      const refreshedGitLabReview =
-        refreshedReview?.provider === 'gitlab' ? refreshedReview : activeGitLabReview
-      if (refreshedGitLabReview) {
-        await fetchGitLabDetails({
-          mrNumberOverride: refreshedGitLabReview.number,
-          headShaOverride: refreshedGitLabReview.headSha,
-          // Why: not commitAsCurrent — an old or fallback MR must not claim the review the panel now shows; the
-          // result-key check lets details land only on the selected review, and a new selection loads its own.
-          isRequestCurrent
-        })
+      const refreshedMatch = refreshed?.provider === hostedProvider ? refreshed : null
+      if (refreshedMatch) {
+        await (hostedProvider === 'bitbucket'
+          ? fetchBitbucketDetails({ prNumberOverride: refreshedMatch.number })
+          : fetchGitLabDetails({
+              mrNumberOverride: refreshedMatch.number,
+              headShaOverride: refreshedMatch.headSha,
+              // Why: not commitAsCurrent — an old or fallback MR must not claim the review the panel now shows; the
+              // result-key check lets details land only on the selected review, and a new selection loads its own.
+              isRequestCurrent
+            }))
       }
       return
     }
@@ -264,11 +275,11 @@ export function useChecksPanelEntryRefreshAndTitleActions(
       linkedGiteaPR
     }).catch(() => null)
   }, [
-    activeGitLabReview,
     activeReview?.provider,
     activeWorktreeId,
     branch,
     fallbackGitHubPRNumber,
+    fetchBitbucketDetails,
     fetchGitLabDetails,
     fetchHostedReviewForBranch,
     fetchPRForBranch,
@@ -284,6 +295,10 @@ export function useChecksPanelEntryRefreshAndTitleActions(
 
   const handleStartEdit = useCallback(() => {
     if (!activeReview) {
+      return
+    }
+    // Data Center has no wired title-edit API; GitHub/GitLab paths own the editor.
+    if (activeReview.provider === 'bitbucket') {
       return
     }
     setTitleDraft(activeReview.title)

@@ -28,6 +28,10 @@ function numberOrUndefined(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function stringOf(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
 function failureReason(error: unknown): string {
   const reason = error instanceof HostedReviewApiRequestError ? serverErrorMessage(error) : ''
   return reason || (error instanceof Error ? error.message : 'request failed')
@@ -90,6 +94,38 @@ async function postComment(
   } catch (error) {
     return { ok: false, error: `Could not post the comment: ${failureReason(error)}` }
   }
+}
+
+async function postTopLevelComment(
+  repoPath: string,
+  prNumber: number,
+  body: string,
+  executionHostId: ExecutionHostId,
+  connectionId: string | null | undefined,
+  options: HostedReviewExecutionOptions
+): Promise<BitbucketAddCommentResult> {
+  const resolved = await resolveRepoApiPath(
+    repoPath,
+    executionHostId,
+    connectionId,
+    options,
+    'Commenting requires a Bitbucket Data Center remote.'
+  )
+  if ('error' in resolved) {
+    return { ok: false, error: resolved.error }
+  }
+  return postComment(resolved.baseUrl, resolved.repoApiPath, prNumber, { text: body })
+}
+
+export async function addBitbucketServerPRComment(
+  repoPath: string,
+  prNumber: number,
+  body: string,
+  executionHostId: ExecutionHostId,
+  connectionId?: string | null,
+  options: HostedReviewExecutionOptions = {}
+): Promise<BitbucketAddCommentResult> {
+  return postTopLevelComment(repoPath, prNumber, body, executionHostId, connectionId, options)
 }
 
 export async function replyToBitbucketServerPRComment(
@@ -155,4 +191,79 @@ export async function addBitbucketServerPRLineComment(
       toHash: args.toHash ?? ''
     }
   })
+}
+
+export type BitbucketResolveCommentResult = { ok: true } | { ok: false; error?: string }
+
+/**
+ * Resolve a comment thread. DC marks resolution on the thread-root comment via
+ * GET (for the optimistic-lock version) + PUT with resolved=true.
+ */
+export async function resolveBitbucketServerPRCommentThread(
+  repoPath: string,
+  prNumber: number,
+  threadRootCommentId: number,
+  resolved: boolean,
+  executionHostId: ExecutionHostId,
+  connectionId?: string | null,
+  options: HostedReviewExecutionOptions = {}
+): Promise<BitbucketResolveCommentResult> {
+  const resolvedPath = await resolveRepoApiPath(
+    repoPath,
+    executionHostId,
+    connectionId,
+    options,
+    'Resolving a comment requires a Bitbucket Data Center remote.'
+  )
+  if ('error' in resolvedPath) {
+    return { ok: false, error: resolvedPath.error }
+  }
+  const commentUrl = (suffix = '') =>
+    new URL(
+      `${resolvedPath.baseUrl}${resolvedPath.repoApiPath}/pull-requests/${encodeURIComponent(
+        String(prNumber)
+      )}/comments/${encodeURIComponent(String(threadRootCommentId))}${suffix}`
+    )
+  try {
+    // SAFETY: DC returns the current comment; only scalar fields are read.
+    const current = await requestHostedReviewJson<RawBitbucketServerComment>(
+      commentUrl(),
+      {
+        headers: {
+          Accept: 'application/json',
+          ...serverAuthHeaders(resolveBitbucketServerAuthConfig())
+        }
+      },
+      COMMENT_POST_TIMEOUT_MS
+    )
+    const version = numberOrUndefined(current.version)
+    if (version === undefined) {
+      return { ok: false, error: 'Could not read the comment version to resolve it.' }
+    }
+    await requestHostedReviewJson(
+      commentUrl(),
+      {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          ...serverAuthHeaders(resolveBitbucketServerAuthConfig())
+        },
+        // Why: DC 8+ transitions comment state (RESOLVED/OPEN); a boolean resolved field is ignored.
+        body: JSON.stringify({
+          text: stringOf(current.text) ?? '',
+          version,
+          severity: stringOf(current.severity) ?? 'NORMAL',
+          state: resolved ? 'RESOLVED' : 'OPEN'
+        })
+      },
+      COMMENT_POST_TIMEOUT_MS
+    )
+    return { ok: true }
+  } catch (error) {
+    return {
+      ok: false,
+      error: failureReason(error)
+    }
+  }
 }

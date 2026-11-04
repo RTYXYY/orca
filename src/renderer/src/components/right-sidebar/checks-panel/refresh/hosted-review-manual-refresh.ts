@@ -91,7 +91,16 @@ export async function refreshChecksPanelHostedReview(
   provider: HostedReviewProvider,
   isCurrentRequest: () => boolean
 ): Promise<'review' | 'no-review' | 'superseded'> {
-  const { repo, branch, activeGitLabReview, fetchGitLabDetails, setChecks, setComments } = model
+  const {
+    repo,
+    branch,
+    activeGitLabReview,
+    activeBitbucketReview,
+    fetchGitLabDetails,
+    fetchBitbucketDetails,
+    setChecks,
+    setComments
+  } = model
   if (!repo || !branch) {
     return 'superseded'
   }
@@ -103,6 +112,20 @@ export async function refreshChecksPanelHostedReview(
   )
   if (!isCurrentRequest()) {
     return 'superseded'
+  }
+  if (provider === 'bitbucket') {
+    const refreshedBitbucketReview =
+      refreshedReview?.provider === 'bitbucket' ? refreshedReview : activeBitbucketReview
+    if (refreshedBitbucketReview) {
+      await fetchBitbucketDetails({
+        prNumberOverride: refreshedBitbucketReview.number,
+        commitAsCurrent: true
+      })
+      return 'review'
+    }
+    setChecks([])
+    setComments([])
+    return 'no-review'
   }
   if (provider !== 'gitlab') {
     return 'review'

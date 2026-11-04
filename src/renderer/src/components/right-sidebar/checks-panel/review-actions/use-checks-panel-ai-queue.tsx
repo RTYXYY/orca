@@ -241,13 +241,18 @@ export function useChecksPanelAiQueue(model: ChecksPanelAiQueueInput) {
             ownerHostId
           }
         : undefined
+    const bitbucketTarget =
+      activeReview.provider === 'bitbucket'
+        ? { repoPath: repo.path, repoId: repo.id, prNumber: activeReview.number }
+        : undefined
     const commentResolution = {
       reviewContextKey: stateRequestKey,
       provider: activeReview.provider,
       selectedGroups: [...selectedGroups],
       githubTarget,
       githubResolveTarget,
-      gitlabTarget
+      gitlabTarget,
+      bitbucketTarget
     }
     openOrStart({
       actionId: 'resolveComments',

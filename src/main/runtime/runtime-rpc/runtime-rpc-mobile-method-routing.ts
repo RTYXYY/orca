@@ -140,6 +140,10 @@ export const EXECUTION_HOST_METHODS = [
   'bitbucket.prComments',
   'bitbucket.addPRCommentReply',
   'bitbucket.addPRLineComment',
+  'bitbucket.setPRReviewStatus',
+  'bitbucket.prTasks',
+  'bitbucket.addPRTask',
+  'bitbucket.setPRTaskState',
   // Mobile Smart picker: resolve a pasted GitLab URL to an exact issue/MR (MR listing reuses gitlab.listWorkItems).
   'gitlab.workItemByPath',
   'gitlab.workItemDetails',

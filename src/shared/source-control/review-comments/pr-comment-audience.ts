@@ -33,6 +33,9 @@ const KNOWN_AUTOMATION_LOGIN_SUBSTRINGS = [
   '-reviewer'
 ]
 
+// Why: some bots post as regular accounts but embed a hidden bot marker in the body.
+const BOT_BODY_MARKER = /<!--\s*bot-comment\s*-->/i
+
 export function isBotPRComment(
   comment: PRComment,
   botAuthorOverrides?: ReadonlySet<string>
@@ -40,6 +43,9 @@ export function isBotPRComment(
   const author = comment.author.trim()
   const normalized = normalizePRCommentAuthorLogin(author)
   if (botAuthorOverrides?.has(normalized) || comment.isBot === true) {
+    return true
+  }
+  if (BOT_BODY_MARKER.test(comment.body)) {
     return true
   }
   if (normalized.endsWith(BOT_LOGIN_SUFFIX)) {
