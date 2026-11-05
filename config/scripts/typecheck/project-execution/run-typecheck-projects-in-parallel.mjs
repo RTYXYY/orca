@@ -82,8 +82,8 @@ export const BUN_TYPESCRIPT_VERSION = '7.0.2'
 export function parseTypecheckOptions(args) {
   const options = {
     compiler: 'auto',
-    bunConcurrency: 2,
-    bunThreads: 4,
+    bunConcurrency: 1,
+    bunThreads: 1,
     checkers: null,
     projects: TYPECHECK_PROJECTS
   }
@@ -173,25 +173,21 @@ export function selectTypecheckCompiler(
   return { compiler, bunExecutable }
 }
 
-export function typecheckBatches(projects, { compiler, bunConcurrency, memoryBytes, parallelism }) {
+export function typecheckBatches(projects, { compiler, memoryBytes }) {
   return planTypecheckBatches(
     compiler === 'native'
       ? projects
       : projects.map((project) => ({ ...project, heapGib: compiler === 'tsrs' ? 7 : 4 })),
     {
       budgetGib: admissibleHeapGib(memoryBytes),
-      parallelism:
-        compiler === 'bun'
-          ? Math.min(parallelism, bunConcurrency)
-          : compiler === 'tsrs'
-            ? Math.min(parallelism, 2)
-            : parallelism
+      // Single-core, single-threaded: one project at a time regardless of host size.
+      parallelism: 1
     }
   )
 }
 
-// Uncapped tsrs runs ~40 threads on 24 cores; 8 checkers matched its wall time with 16% less CPU under load.
-export const TSRS_DEFAULT_CHECKERS = 8
+// Forced to 1: the typecheck runner executes one project with one checker thread.
+export const TSRS_DEFAULT_CHECKERS = 1
 
 const checkerArgs = (checkers) => (checkers ? ['--checkers', String(checkers)] : [])
 
@@ -252,7 +248,7 @@ export async function runTypecheckProjects({
   compiler = 'native',
   bunExecutable = 'bun',
   bunConcurrency = 1,
-  bunThreads = 4,
+  bunThreads = 1,
   checkers = null,
   root = repoRoot,
   projects = TYPECHECK_PROJECTS,

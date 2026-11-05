@@ -179,10 +179,7 @@ describe('local and CI compiler selection', () => {
         memoryBytes,
         parallelism: 16
       })
-      expect(Math.max(...batches.map((batch) => batch.length))).toBeLessThanOrEqual(2)
-      if (memoryBytes === 4 * 1024 ** 3) {
-        expect(batches.every((batch) => batch.length === 1)).toBe(true)
-      }
+      expect(batches.every((batch) => batch.length === 1)).toBe(true)
     }
   })
 
@@ -297,7 +294,7 @@ describe('local and CI compiler selection', () => {
       memoryBytes: CI_RUNNER.totalBytes,
       parallelism: 4
     })
-    expect(batches.map((batch) => batch.length)).toEqual([2, 2, 1])
+    expect(batches.map((batch) => batch.length)).toEqual([1, 1, 1, 1, 1])
     expect(batches.flat().map((project) => project.config)).toEqual(
       TYPECHECK_PROJECTS.map((project) => project.config)
     )

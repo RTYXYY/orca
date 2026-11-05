@@ -5,7 +5,7 @@ const { gitExecFileAsyncMock, baseUrlMock } = vi.hoisted(() => ({
   baseUrlMock: vi.fn<() => string | null>()
 }))
 
-vi.mock('../git/runner', () => ({
+vi.mock('../git/command-runner/git-exec-file', () => ({
   gitExecFileAsync: gitExecFileAsyncMock
 }))
 

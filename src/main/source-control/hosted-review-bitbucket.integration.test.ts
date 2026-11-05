@@ -126,6 +126,7 @@ describe('Bitbucket hosted review integration', () => {
             : {}),
           updatedAt: '2026-05-15T00:00:00Z',
           mergeable: 'UNKNOWN',
+          reviewDecision: null,
           headSha: 'abc123'
         })
 

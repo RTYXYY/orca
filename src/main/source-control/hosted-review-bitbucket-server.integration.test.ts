@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { _resetBitbucketServerRepoRefCache } from '../bitbucket/server-repository-ref'
 import { _resetBitbucketRepoRefCache } from '../bitbucket/repository-ref'
 import { _resetGiteaRepoRefCache } from '../gitea/repository-ref'
-import { detectHostedReviewProvider } from './forge-provider'
+import { detectHostedReviewProvider } from './forge-provider-detection'
 import { getHostedReviewForBranch } from './hosted-review'
 import { __resetHostedReviewBranchCacheForTests } from './hosted-review-branch-cache'
 

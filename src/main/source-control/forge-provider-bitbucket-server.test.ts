@@ -83,7 +83,7 @@ describe('bitbucket forge provider with Bitbucket Server', () => {
       repoSlug: 'repo'
     })
     const review = await provider.getReviewForBranch({ ...CONTEXT, branch: 'feat' })
-    expect(review).not.toHaveProperty('reviewDecision')
+    expect(review).toMatchObject({ reviewDecision: null })
     expect(getBitbucketServerPullRequestForBranchOrThrowMock).not.toHaveBeenCalled()
   })
 

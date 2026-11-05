@@ -8,9 +8,9 @@ import { translate } from '@/i18n/i18n'
 import {
   IntegrationCardDetails,
   IntegrationCardShell
-} from '../../integrations/presentation/integration-card-shell'
-import { useIntegrationSubordinateRowClass } from '../../integrations/presentation/integration-card-presentation'
-import { UnsealedCredentialNotice } from '../../provider-accounts/UnsealedCredentialNotice'
+} from '../integrations/presentation/integration-card-shell'
+import { useIntegrationSubordinateRowClass } from '../integrations/presentation/integration-card-presentation'
+import { UnsealedCredentialNotice } from '../provider-accounts/UnsealedCredentialNotice'
 import { BitbucketServerCredentialsDialog } from './bitbucket-server-credentials-dialog'
 
 export function BitbucketServerIntegrationCard(): React.JSX.Element {

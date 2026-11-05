@@ -290,6 +290,7 @@ describe('getHostedReviewForBranch', () => {
       status: 'success',
       updatedAt: '2026-05-10T00:00:00.000Z',
       mergeable: 'UNKNOWN',
+      reviewDecision: null,
       headSha: 'abc123'
     })
     expect(getBitbucketRepoSlugMock).toHaveBeenCalledWith('/repo', 'ssh-1')

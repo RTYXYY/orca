@@ -7,8 +7,8 @@ import {
   readStoredCredentialToken,
   writeCredentialFileAtomic,
   writeEncryptedCredential
-} from '../integration-credential-file'
-import { readCredentialFileProtection } from '../credential-file-protection'
+} from '../credentials/integration-credential-file'
+import { readCredentialFileProtection } from '../credentials/credential-file-protection'
 import type { SecretAtRestProtection } from '../../shared/secret-at-rest-protection'
 
 // Why: separate files from the Cloud credential so both can be connected at once
