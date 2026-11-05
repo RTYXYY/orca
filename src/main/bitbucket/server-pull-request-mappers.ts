@@ -80,6 +80,10 @@ export function deriveBitbucketServerMergeable(
   return stringOf(merge?.outcome)?.toUpperCase() === 'CLEAN' ? 'MERGEABLE' : 'UNKNOWN'
 }
 
+// DC 7.9 statuses plus the 8.x variants; everything else (e.g. null on a fresh reviewer row) counts as no verdict yet.
+const CHANGES_REQUESTED_STATUSES = new Set(['NEEDS_WORK'])
+const APPROVED_STATUSES = new Set(['APPROVED'])
+
 export function deriveBitbucketServerReviewDecision(
   raw: Pick<RawBitbucketServerPullRequest, 'reviewers' | 'participants'>
 ): PRReviewDecision | null {
@@ -88,11 +92,16 @@ export function deriveBitbucketServerReviewDecision(
   if (all.length === 0) {
     return null
   }
-  const statuses = all.map((reviewer) => stringOf(reviewer.status)?.toUpperCase())
-  if (statuses.includes('NEEDS_WORK')) {
+  const statuses = all
+    .map((reviewer) => stringOf(reviewer.status)?.trim().toUpperCase())
+    .filter((status): status is string => status !== undefined)
+  if (statuses.length === 0) {
+    return null
+  }
+  if (statuses.some((status) => CHANGES_REQUESTED_STATUSES.has(status))) {
     return 'CHANGES_REQUESTED'
   }
-  return statuses.includes('APPROVED') ? 'APPROVED' : 'REVIEW_REQUIRED'
+  return statuses.some((status) => APPROVED_STATUSES.has(status)) ? 'APPROVED' : 'REVIEW_REQUIRED'
 }
 
 export function bitbucketServerHeadSha(raw: RawBitbucketServerPullRequest): string | undefined {

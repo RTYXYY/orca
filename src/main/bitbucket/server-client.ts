@@ -1,11 +1,14 @@
-import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 import { shouldHideNonOpenReviewOnDefaultBranch } from '../source-control/repo-default-branch'
 import {
   getHostedReviewLocalGitOptions,
   type HostedReviewExecutionOptions
 } from '../source-control/hosted-review-git-options'
 import type { BitbucketPullRequestInfo } from './pull-request-mappers'
-import { resolveBitbucketServerAuthConfig, serverAuthHeaders } from './server-auth-config'
+import {
+  HostedReviewApiRequestError,
+  serverRequestFailureMessage,
+  serverRequestJson
+} from './server-request'
 import {
   bitbucketServerHeadSha,
   deriveBitbucketServerBuildStatus,
@@ -18,8 +21,6 @@ import {
 } from './server-pull-request-mappers'
 import { getBitbucketServerRepoRef, type BitbucketServerRepoRef } from './server-repository-ref'
 
-const REQUEST_TIMEOUT_MS = 5000
-
 type RequestOptions = {
   searchParams?: Record<string, string>
   // Why: a failed lookup behind Create must throw, never read as "no PR".
@@ -29,37 +30,18 @@ type RequestOptions = {
 }
 
 async function requestJson<T>(path: string, options: RequestOptions = {}): Promise<T | null> {
-  const config = resolveBitbucketServerAuthConfig()
-  if (!config.baseUrl || !config.accessToken) {
-    if (options.throwOnFailure) {
-      throw new Error('Bitbucket Server request failed: no usable credential')
-    }
-    return null
-  }
-  const url = new URL(`${config.baseUrl}${path}`)
-  for (const [key, value] of Object.entries(options.searchParams ?? {})) {
-    url.searchParams.set(key, value)
-  }
   try {
-    const response = await fetch(url.toString(), {
-      headers: { Accept: 'application/json', ...serverAuthHeaders(config) },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-    })
-    if (!response.ok) {
-      await cancelUnreadResponseBody(response)
-      if (response.status === 404 && options.notFoundIsNull) {
-        return null
-      }
-      if (options.throwOnFailure) {
-        throw new Error(`Bitbucket Server request failed: HTTP ${response.status}`)
-      }
+    return await serverRequestJson<T>(path, { searchParams: options.searchParams })
+  } catch (error) {
+    if (
+      options.notFoundIsNull &&
+      error instanceof HostedReviewApiRequestError &&
+      error.status === 404
+    ) {
       return null
     }
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: every Raw* field is optional and the mappers type-check the string fields before use.
-    return (await response.json()) as T
-  } catch (error) {
     if (options.throwOnFailure) {
-      throw error
+      throw new Error(serverRequestFailureMessage(error), { cause: error })
     }
     return null
   }

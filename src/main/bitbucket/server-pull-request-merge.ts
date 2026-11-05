@@ -1,8 +1,5 @@
 import type { ExecutionHostId } from '../../shared/execution-host'
-import {
-  HostedReviewApiRequestError,
-  requestHostedReviewJson
-} from '../source-control/hosted-review-api-request'
+import { HostedReviewApiRequestError } from '../source-control/hosted-review-api-request'
 import { hostedReviewSshConnectionId } from '../source-control/hosted-review-execution-host'
 import {
   getHostedReviewLocalGitOptions,
@@ -10,6 +7,8 @@ import {
 } from '../source-control/hosted-review-git-options'
 import { resolveBitbucketServerAuthConfig, serverAuthHeaders } from './server-auth-config'
 import { bitbucketServerRepoApiPath } from './server-client'
+import { requestHostedReviewJson } from '../source-control/hosted-review-api-request'
+import { serverRequestJson } from './server-request'
 import { serverErrorMessage } from './server-request-errors'
 import { getBitbucketServerRepoRef } from './server-repository-ref'
 
@@ -65,16 +64,13 @@ function classifyMergeError(error: unknown): MergeBitbucketServerPullRequestResu
 }
 
 async function getPullRequestVersion(
-  config: ReturnType<typeof resolveBitbucketServerAuthConfig>,
-  baseUrl: string,
   repoApiPath: string,
   prNumber: number
 ): Promise<number | null> {
   try {
-    const raw = await requestHostedReviewJson<{ version?: number }>(
-      new URL(`${baseUrl}${repoApiPath}/pull-requests/${encodeURIComponent(String(prNumber))}`),
-      { headers: { Accept: 'application/json', ...serverAuthHeaders(config) } },
-      LOOKUP_TIMEOUT_MS
+    const raw = await serverRequestJson<{ version?: number }>(
+      `${repoApiPath}/pull-requests/${encodeURIComponent(String(prNumber))}`,
+      { timeoutMs: LOOKUP_TIMEOUT_MS }
     )
     return typeof raw.version === 'number' ? raw.version : null
   } catch {
@@ -111,7 +107,7 @@ export async function mergeBitbucketServerPullRequest(
   }
   const repoApiPath = bitbucketServerRepoApiPath(repo)
   // Why: the merge POST requires the PR's current version as an optimistic lock.
-  const version = await getPullRequestVersion(config, repo.baseUrl, repoApiPath, prNumber)
+  const version = await getPullRequestVersion(repoApiPath, prNumber)
   if (version === null) {
     return {
       ok: false,

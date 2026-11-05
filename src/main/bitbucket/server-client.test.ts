@@ -41,10 +41,11 @@ function serverPr(id = 12, state = 'OPEN', branch = 'feat') {
 }
 
 function routeFetch(routes: Record<string, () => Response>) {
-  return vi.fn(async (url: string, _init?: RequestInit) => {
-    const key = Object.keys(routes).find((prefix) => url.startsWith(prefix))
+  return vi.fn(async (url: string | URL, _init?: RequestInit) => {
+    const target = typeof url === 'string' ? url : url.toString()
+    const key = Object.keys(routes).find((prefix) => target.startsWith(prefix))
     if (!key) {
-      throw new Error(`unexpected fetch: ${url}`)
+      throw new Error(`unexpected fetch: ${target}`)
     }
     return routes[key]()
   })

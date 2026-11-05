@@ -1,16 +1,13 @@
 import type { ExecutionHostId } from '../../shared/execution-host'
 import type { PRReviewDecision } from '../../shared/github/pull-request-types'
-import {
-  HostedReviewApiRequestError,
-  requestHostedReviewJson
-} from '../source-control/hosted-review-api-request'
 import { hostedReviewSshConnectionId } from '../source-control/hosted-review-execution-host'
 import {
   getHostedReviewLocalGitOptions,
   type HostedReviewExecutionOptions
 } from '../source-control/hosted-review-git-options'
-import { resolveBitbucketServerAuthConfig, serverAuthHeaders } from './server-auth-config'
+import { resolveBitbucketServerAuthConfig } from './server-auth-config'
 import { bitbucketServerRepoApiPath } from './server-client'
+import { HostedReviewApiRequestError, serverRequestJson } from './server-request'
 import { getBitbucketServerRepoRef } from './server-repository-ref'
 
 const LIST_TIMEOUT_MS = 30_000
@@ -141,22 +138,20 @@ export async function listBitbucketServerPullRequests(
     mine: 'AUTHOR',
     'needs-review': 'REVIEWER'
   }
-  const url = new URL(`${config.baseUrl}${bitbucketServerRepoApiPath(repo)}/pull-requests`)
-  url.searchParams.set('state', 'OPEN')
-  url.searchParams.set('limit', String(LIST_PAGE_LIMIT))
-  url.searchParams.set('order', 'NEWEST')
   const role = roleByFilter[filter]
-  if (role) {
-    url.searchParams.set('role', role)
-  }
   try {
     // SAFETY: DC returns a paged JSON object; each item is validated in mapSummary.
-    const body = await requestHostedReviewJson<RawListResponse>(
-      url,
+    const body = await serverRequestJson<RawListResponse>(
+      `${bitbucketServerRepoApiPath(repo)}/pull-requests`,
       {
-        headers: { Accept: 'application/json', ...serverAuthHeaders(config) }
-      },
-      LIST_TIMEOUT_MS
+        searchParams: {
+          state: 'OPEN',
+          limit: String(LIST_PAGE_LIMIT),
+          order: 'NEWEST',
+          ...(role ? { role } : {})
+        },
+        timeoutMs: LIST_TIMEOUT_MS
+      }
     )
     const prs = (body.values ?? [])
       .map(mapSummary)

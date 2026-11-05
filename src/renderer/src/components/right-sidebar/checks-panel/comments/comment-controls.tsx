@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react'
+import { prCommentLocation } from '@/lib/pr-comment-location'
 import {
   Bot,
   Check,
@@ -172,13 +173,15 @@ export function CommentLocationLabel({
   className: string
   onOpenLocation?: (path: string, line: number) => void
 }): React.JSX.Element | null {
-  const { path, line } = comment
+  const { path } = comment
   if (!path) {
     return null
   }
   const lineRange = formatLineRange(comment)
   const label = `${basename(path)}${lineRange ? `:${lineRange}` : ''}`
-  if (!onOpenLocation || !line) {
+  // Why: one shared placement rule — outdated/orphaned anchors and unplaced lines render as plain text.
+  const location = prCommentLocation(comment)
+  if (!onOpenLocation || !location) {
     return (
       <span className={className} title={path}>
         {label}
@@ -195,7 +198,7 @@ export function CommentLocationLabel({
       title={path}
       onClick={(event) => {
         event.stopPropagation()
-        onOpenLocation(path, comment.startLine ?? line)
+        onOpenLocation(location.path, location.line)
       }}
     >
       {label}
