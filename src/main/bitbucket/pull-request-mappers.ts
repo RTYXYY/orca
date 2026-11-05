@@ -2,7 +2,8 @@ import { summarizeProviderChecks } from '../../shared/source-control/checks/prov
 import type {
   CheckStatus,
   PRMergeableState,
-  ProviderCheckSummary
+  ProviderCheckSummary,
+  PRReviewDecision
 } from '../../shared/github/pull-request-types'
 
 export type RawBitbucketPullRequest = {
@@ -39,6 +40,7 @@ export type BitbucketPullRequestInfo = {
   checksSummary?: ProviderCheckSummary
   updatedAt: string
   mergeable: PRMergeableState
+  reviewDecision?: PRReviewDecision | null
   headSha?: string
 }
 

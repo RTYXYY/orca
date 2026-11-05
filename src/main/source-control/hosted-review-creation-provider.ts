@@ -3,6 +3,8 @@ import type { HostedReviewProvider } from '../../shared/source-control/hosted-re
 import type { HostedReviewCreationProvider } from '../../shared/source-control/hosted-review/hosted-review-creation-providers'
 import { isAzureDevOpsReviewCreationAuthenticated } from '../azure-devops/pull-request-creation'
 import { isBitbucketReviewCreationAuthenticated } from '../bitbucket/pull-request-creation'
+import { isBitbucketServerReviewCreationAuthenticated } from '../bitbucket/server-pull-request-creation'
+import { getBitbucketServerRepoRef } from '../bitbucket/server-repository-ref'
 import { isGiteaReviewCreationAuthenticated } from '../gitea/pull-request-creation'
 import { getEnterpriseGitHubRepoSlug } from '../github/github-enterprise-repository'
 import { acquire, ghExecFileAsync, release } from '../github/gh-utils'
@@ -127,8 +129,16 @@ export async function isProviderAuthenticated(
     return isGiteaReviewCreationAuthenticated()
   }
   if (provider === 'bitbucket') {
-    // Bitbucket authentication must not fall through to GitHub login requirements.
-    return isBitbucketReviewCreationAuthenticated()
+    // Why: falling through to the GitHub check made Create PR unusable for
+    // anyone with Bitbucket connected but no `gh auth login`.
+    const serverRepo = await getBitbucketServerRepoRef(
+      repoPath,
+      hostedReviewSshConnectionId(executionHostId),
+      getHostedReviewLocalGitOptions(options)
+    )
+    return serverRepo
+      ? isBitbucketServerReviewCreationAuthenticated()
+      : isBitbucketReviewCreationAuthenticated()
   }
   // Only CLI-backed providers need host-routed Git reads; their CLIs run here. Token-backed providers do not touch the repo.
   const connectionId = hostedReviewSshConnectionId(executionHostId)
