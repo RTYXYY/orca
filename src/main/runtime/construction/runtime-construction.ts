@@ -120,6 +120,7 @@ export abstract class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCo
   readonly getAcceptedAgentReply: RuntimeConstructionBindings['getAcceptedAgentReply']
   /** Synchronous on every hook status row change, including clears. */
   readonly subscribeAgentStatusRowChanges: RuntimeConstructionBindings['subscribeAgentStatusRowChanges']
+
   protected readonly machineName = new RuntimeMachineName(
     () => this.store?.getSettings?.().machineName
   )

@@ -142,7 +142,6 @@ export abstract class OrcaRuntimeWithRepositoryCommands extends OrcaRuntimeWithF
     resolveRepo: (selector) => this.resolveRepoSelector(selector),
     getLocalGitArgs: (repo) => this.getLocalGitExecutionOptionArgs(repo)
   })
-
   protected readonly gitHubReviewQueries = new RuntimeGitHubReviewQueryCommands({
     resolveRepo: (selector) => this.resolveRepoSelector(selector),
     getLocalGitArgs: (repo) => this.getLocalGitExecutionOptionArgs(repo)
