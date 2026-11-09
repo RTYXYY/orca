@@ -30,6 +30,7 @@ import {
   type MobileRelayPairingProvider,
   type PairingOfferUnavailable
 } from './runtime-rpc-pairing-types'
+import { pendingVmCheckouts } from '../../../ephemeral-vm/pending-vm-checkouts'
 
 export class RuntimeRpcPairing extends RuntimeRpcNetworkExposure {
   getDeviceRegistry(): DeviceRegistry | null {
@@ -126,9 +127,17 @@ export class RuntimeRpcPairing extends RuntimeRpcNetworkExposure {
             getHostDisplayLabelOverrides(this.runtime.requireStore().getSettings()),
           getWorkspaceSession: (hostId) => this.runtime.getWorkspaceSessionForHost(hostId),
           recipeEnvironmentsFor: (hostId) =>
-            this.runtime.describeRecipeWorkspaceEnvironments(hostId)
+            this.runtime.describeRecipeWorkspaceEnvironments(hostId),
+          pendingVmCheckouts: () => pendingVmCheckouts.current()
         })
       : null
+    this.detachRelayHostsChanges?.()
+    this.detachRelayHostsChanges =
+      this.mobileRelayHostCatalog?.publishListChanges({
+        onClientEvent: (listener) =>
+          this.runtime.onClientEvent(listener, { consumesTerminalSideEffects: false }),
+        changed: () => this.runtime.notifyRelayHostsChanged()
+      }) ?? null
     this.runtime.setPairedWorkspaceContextSource(this.mobileRelayHostCatalog)
   }
 

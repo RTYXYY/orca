@@ -14,6 +14,7 @@ import type { WorkspaceSessionState } from '../../../shared/workspace-session/wo
 import type { MobileDesktopRelayHosts } from './mobile-desktop-relay-hosts'
 import { MobileRelayHostCatalog } from './mobile-relay-host-catalog'
 import { PairedServerRowsProducer } from '../sidebar-inputs/paired-server-rows-producer'
+import { indexPendingVmCheckouts } from '../../../shared/pending-vm-checkouts'
 
 function answer(capable: boolean): RuntimeStatus {
   return {
@@ -69,6 +70,7 @@ function fakeHosts(
     environments,
     pairingRevision: 1,
     retire: (_environmentId: string) => {},
+    statusChanged: () => {},
     sshTargetLabels: new Map<string, string>(),
     sshConnectionStates: new Map<string, SshConnectionState>()
   }
@@ -119,7 +121,10 @@ function fakeHosts(
       state.retire = listener
       return () => {}
     },
-    onStatusChanged: () => () => {},
+    onStatusChanged: (listener) => {
+      state.statusChanged = listener
+      return () => {}
+    },
     watchChanges: () => ({ close: () => {}, current: () => true })
   }
   return { hosts, call, state }
@@ -133,6 +138,7 @@ function catalog(
     recipeEnvironmentsFor?: (
       hostId: string
     ) => ReadonlyMap<string, { name: string; destroys: boolean }>
+    pendingVmCheckouts?: { repoId: string; path: string }[]
   } = {}
 ) {
   const serverRows = new PairedServerRowsProducer({
@@ -151,6 +157,9 @@ function catalog(
       },
       ...(desktop.recipeEnvironmentsFor
         ? { recipeEnvironmentsFor: desktop.recipeEnvironmentsFor }
+        : {}),
+      ...(desktop.pendingVmCheckouts
+        ? { pendingVmCheckouts: () => indexPendingVmCheckouts(desktop.pendingVmCheckouts ?? []) }
         : {})
     })
   }
@@ -186,6 +195,27 @@ describe('mobile relay host catalog', () => {
     })
     // One store read per poll, not one per row.
     expect(lookups).toEqual(['runtime:env'])
+  })
+
+  it("leaves out a VM checkout a desktop create has not adopted yet, but not the VM's other rows", async () => {
+    const { hosts, call } = fakeHosts([
+      { id: 'env', name: 'Box', snapshot: snapshot('env', 'live') }
+    ])
+    call.mockResolvedValueOnce(
+      psReply([
+        { worktreeId: 'vm::/srv/repo', repoId: 'vm', path: '/srv/repo', isMainWorktree: true },
+        { worktreeId: 'vm::/srv/wt', repoId: 'vm', path: '/srv/wt', isMainWorktree: false },
+        { worktreeId: 'other::/srv/repo', repoId: 'other', path: '/srv/repo', isMainWorktree: true }
+      ])
+    )
+    const { catalog: hostCatalog } = catalog(hosts, new Map(), {
+      pendingVmCheckouts: [{ repoId: 'vm', path: '/srv/repo' }]
+    })
+    const result = await hostCatalog.worktrees('runtime:env')
+    expect(result.worktrees?.map((row) => row.worktreeId)).toEqual([
+      'vm::/srv/wt',
+      'other::/srv/repo'
+    ])
   })
 
   it("drops a server's own recipe-environment claim and survives an unreadable VM store", async () => {
@@ -250,6 +280,25 @@ describe('mobile relay host catalog', () => {
     expect(hostCatalog.list().hosts).toEqual([])
     state.environments = [{ ...removed[0]!, snapshot: snapshot('env', 'unreachable') }]
     await expect(hostCatalog.worktrees('runtime:env')).resolves.toEqual({ worktrees: null })
+  })
+
+  it('tells phones when a status change alters the host list, and not when it leaves it as is', async () => {
+    const { hosts, state } = fakeHosts([
+      { id: 'env', name: 'Box', snapshot: snapshot('env', 'live') }
+    ])
+    const { catalog: hostCatalog } = catalog(hosts)
+    const changed = vi.fn()
+    hostCatalog.publishListChanges({ onClientEvent: () => () => {}, changed })
+    expect(hostCatalog.list().hosts).toMatchObject([{ hostId: 'runtime:env', relay: 'ready' }])
+
+    state.statusChanged()
+    await Promise.resolve()
+    expect(changed).not.toHaveBeenCalled()
+
+    state.environments = [{ ...state.environments[0]!, snapshot: snapshot('env', 'unreachable') }]
+    state.statusChanged()
+    await Promise.resolve()
+    expect(changed).toHaveBeenCalledTimes(1)
   })
 
   it('answers with the last rows when the server never answers the fetch', async () => {
