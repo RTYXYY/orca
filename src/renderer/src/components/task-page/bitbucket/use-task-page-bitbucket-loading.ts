@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { Repo } from '../../../../../shared/repo-types'
-import type { TaskProvider } from '../../../../../shared/task-providers'
+import type { TaskProvider } from '../../../../../shared/work-items/task-providers'
 import type { BitbucketWorkItem, BitbucketTaskFilter } from '../../../../../shared/bitbucket-types'
 import { getRepoExecutionHostId } from '../../../../../shared/execution-host'
 import { mapSettledWithConcurrency } from '../../../../../shared/map-with-concurrency'

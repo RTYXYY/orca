@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { TaskProvider } from '../../../../../shared/task-providers'
+import type { TaskProvider } from '../../../../../shared/work-items/task-providers'
 import {
   TASK_PROVIDER_SETUP_STATUS_TONE,
   getAutoExpandedTaskProvider,

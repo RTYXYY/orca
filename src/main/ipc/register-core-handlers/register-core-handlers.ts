@@ -90,17 +90,14 @@ import type { ClaudeUsageStore } from '../../claude-usage/store'
 import type { CodexUsageStore } from '../../codex-usage/store'
 import type { OpenCodeUsageStore } from '../../opencode-usage/store'
 import type { MuseUsageStore } from '../../muse-usage/store'
-import type { RateLimitService } from '../../rate-limits/service'
+import type { RateLimitService } from '../../rate-limits/service/rate-limit-service'
 import type { CodexAccountService } from '../../codex-accounts/service'
 import type { ClaudeAccountService } from '../../claude-accounts/service'
 import type { AutomationService } from '../../automations/service'
 import type { AgentAwakeService } from '../../power/agent-awake-service'
 import type { CrashReportStore } from '../../crash-reporting/crash-report-store'
 import type { KeybindingService } from '../../keybindings/keybinding-service'
-import type {
-  AiVaultPrepareSessionResumeArgs,
-  AiVaultPrepareSessionResumeResult
-} from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
+import type { AiVaultSessionResumePreparation } from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
 import {
   getSavedRuntimeAiVaultHostInfos,
   deleteRuntimeAiVaultSession,
@@ -120,7 +117,6 @@ import { getRuntimeEnvironmentRegistryRoot } from '../runtime-environments/runti
 let registered = false
 // Same cap as the restart path's auth preservation: bookkeeping must not hold Restart on a stalled disk.
 const RELAUNCH_DISMISSAL_CLOSE_TIMEOUT_MS = 2_000
-
 async function closeNotificationDismissalsBeforeRelaunch(
   runtime: OrcaRuntimeService
 ): Promise<void> {
@@ -139,11 +135,8 @@ type CoreHandlerLifecycleOptions = {
   onBeforeOrcaProfileSignOut?: () => void
   onAfterOrcaProfileSignOut?: () => void
   getAdditionalAiVaultCodexHomePaths?: () => readonly string[]
-  prepareAiVaultSessionResume?: (
-    args: AiVaultPrepareSessionResumeArgs
-  ) => Promise<AiVaultPrepareSessionResumeResult>
+  prepareAiVaultSessionResume?: AiVaultSessionResumePreparation
 }
-
 export function registerCoreHandlers(
   store: Store,
   runtime: OrcaRuntimeService,

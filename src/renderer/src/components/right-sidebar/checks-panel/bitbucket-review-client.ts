@@ -4,7 +4,7 @@ import type { Repo } from '../../../../../shared/repo-types'
 import type { HostedReviewInfo } from '../../../../../shared/source-control/hosted-review/hosted-review-contracts'
 import type { ChecksPanelReview } from './checks-panel-review'
 import { getRepoExecutionHostId, parseExecutionHostId } from '../../../../../shared/execution-host'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
+import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import type { RightPanelCommentSubmitResult } from './comments/right-panel-comment-composer'
 

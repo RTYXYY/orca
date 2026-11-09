@@ -173,15 +173,19 @@ export function selectTypecheckCompiler(
   return { compiler, bunExecutable }
 }
 
-export function typecheckBatches(projects, { compiler, memoryBytes }) {
+export function typecheckBatches(projects, { compiler, bunConcurrency, memoryBytes, parallelism }) {
   return planTypecheckBatches(
     compiler === 'native'
       ? projects
       : projects.map((project) => ({ ...project, heapGib: compiler === 'tsrs' ? 7 : 4 })),
     {
       budgetGib: admissibleHeapGib(memoryBytes),
-      // Single-core, single-threaded: one project at a time regardless of host size.
-      parallelism: 1
+      parallelism:
+        compiler === 'bun'
+          ? Math.min(parallelism, bunConcurrency)
+          : compiler === 'tsrs'
+            ? Math.min(parallelism, 2)
+            : parallelism
     }
   )
 }

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PRComment } from '../../../../../shared/github/comment-types'
 import { useAppStore } from '@/store'
-import { findWorktreeById } from '@/store/github/worktree-refresh'
-import { useRepoById } from '@/store/selectors'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
+import { useRepoById } from '@/store/repos/use-repository-catalog'
 import { fetchBitbucketPRComments, replyToBitbucketPRComment } from './bitbucket-pr-comment-rpc'
 import { buildBitbucketInlineReviewComments } from './bitbucket-pr-inline-comments'
 

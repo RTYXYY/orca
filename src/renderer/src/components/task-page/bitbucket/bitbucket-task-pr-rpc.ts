@@ -2,7 +2,7 @@ import type { Repo } from '../../../../../shared/repo-types'
 import { getRepoExecutionHostId, parseExecutionHostId } from '../../../../../shared/execution-host'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import type { BitbucketWorkItem, BitbucketTaskFilter } from '../../../../../shared/bitbucket-types'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
+import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 
 type BitbucketServerPRSummary = {
   number: number
